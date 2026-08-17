@@ -7,27 +7,27 @@
 }
 
 body {
-  background-color: #16110d;
-  color: #f2e9df;
+  background-color: #121110;
+  color: #ece6db;
 }
 
 ::selection {
-  background: rgba(209, 161, 63, 0.35);
-  color: #f2e9df;
+  background: rgba(224, 145, 60, 0.35);
+  color: #ece6db;
 }
 
 ::-webkit-scrollbar {
   width: 10px;
 }
 ::-webkit-scrollbar-track {
-  background: #1c1611;
+  background: #17150f;
 }
 ::-webkit-scrollbar-thumb {
-  background: #3c3126;
+  background: #2e2b25;
   border-radius: 6px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #4a3c2f;
+  background: #3c3830;
 }
 
 h1,

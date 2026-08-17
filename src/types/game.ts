@@ -5,7 +5,7 @@ export interface RawGame {
   id: string;
   name: string;
   playtimeMinutes: number;
-  iconUrl?: string;
+  coverUrl?: string;
   lastPlayed?: string | null;
   trophies?: TrophySummary | null;
   achievements?: AchievementSummary | null;

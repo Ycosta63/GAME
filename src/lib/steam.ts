@@ -7,7 +7,6 @@ interface SteamOwnedGame {
   appid: number;
   name: string;
   playtime_forever: number;
-  img_icon_url?: string;
   rtime_last_played?: number;
 }
 
@@ -68,9 +67,11 @@ export async function fetchOwnedGames(
       id: String(g.appid),
       name: g.name,
       playtimeMinutes: g.playtime_forever,
-      iconUrl: g.img_icon_url
-        ? `https://media.steampowered.com/steamcommunity/public/images/apps/${g.appid}/${g.img_icon_url}.jpg`
-        : undefined,
+      // Portrait "library capsule" art Valve serves for the store/library UI —
+      // a poster-shaped cover, not the tiny 32x32 icon. Not every app has
+      // one (older titles); the client falls back to the landscape header
+      // image, then to a text placeholder.
+      coverUrl: `https://cdn.cloudflare.steamstatic.com/steam/apps/${g.appid}/library_600x900.jpg`,
       lastPlayed: g.rtime_last_played
         ? new Date(g.rtime_last_played * 1000).toISOString()
         : null,

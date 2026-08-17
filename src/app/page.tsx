@@ -3,7 +3,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import StatsBar from "@/components/StatsBar";
-import GameRow from "@/components/GameRow";
+import GameCard from "@/components/GameCard";
+import GameDetailModal from "@/components/GameDetailModal";
 import ShelfieMark from "@/components/ShelfieMark";
 import type { LibraryEntry, LibraryResponse, Platform } from "@/types/game";
 
@@ -36,6 +37,7 @@ export default function DashboardPage() {
   const [duplicatesOnly, setDuplicatesOnly] = useState(false);
   const [hideNeverPlayed, setHideNeverPlayed] = useState(false);
   const [sortMode, setSortMode] = useState<SortMode>("playtime");
+  const [selectedKey, setSelectedKey] = useState<string | null>(null);
 
   const load = useCallback((force: boolean) => {
     if (force) setRefreshing(true);
@@ -92,6 +94,10 @@ export default function DashboardPage() {
 
   const notConfigured =
     data && data.entries.length === 0 && data.errors.length === 0;
+
+  const selectedEntry = selectedKey
+    ? data?.entries.find((e) => e.key === selectedKey) ?? null
+    : null;
 
   return (
     <div className="space-y-6">
@@ -208,17 +214,28 @@ export default function DashboardPage() {
             </span>
           </div>
 
-          <div className="space-y-2">
+          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-7 gap-3">
             {filteredEntries.map((entry) => (
-              <GameRow key={entry.key} entry={entry} />
+              <GameCard
+                key={entry.key}
+                entry={entry}
+                onSelect={() => setSelectedKey(entry.key)}
+              />
             ))}
-            {filteredEntries.length === 0 && (
-              <div className="text-shelf-muted text-sm text-center py-8">
-                Aucun jeu ne correspond à ces filtres.
-              </div>
-            )}
           </div>
+          {filteredEntries.length === 0 && (
+            <div className="text-shelf-muted text-sm text-center py-8">
+              Aucun jeu ne correspond à ces filtres.
+            </div>
+          )}
         </>
+      )}
+
+      {selectedEntry && (
+        <GameDetailModal
+          entry={selectedEntry}
+          onClose={() => setSelectedKey(null)}
+        />
       )}
     </div>
   );

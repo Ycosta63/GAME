@@ -77,7 +77,7 @@ export async function fetchPsnLibrary(npsso: string): Promise<RawGame[]> {
           playtimeMinutes: parseIsoDurationToMinutes(
             (title as unknown as { playDuration?: string }).playDuration
           ),
-          iconUrl: title.trophyTitleIconUrl,
+          coverUrl: title.trophyTitleIconUrl,
           lastPlayed: title.lastUpdatedDateTime ?? null,
           trophies,
         });
