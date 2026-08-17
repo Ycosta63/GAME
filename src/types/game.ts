@@ -43,10 +43,12 @@ export interface LibraryStats {
   byPlatform: Record<Platform, { games: number; playtimeMinutes: number }>;
   totalTrophies: number;
   totalPlatinums: number;
+  neverPlayed: number;
 }
 
 export interface LibraryResponse {
   entries: LibraryEntry[];
   stats: LibraryStats;
   errors: { platform: Platform; message: string }[];
+  syncedAt: string;
 }

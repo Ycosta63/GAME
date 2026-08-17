@@ -97,9 +97,10 @@ export async function buildLibrary(): Promise<LibraryResponse> {
     byPlatform,
     totalTrophies,
     totalPlatinums,
+    neverPlayed: entries.filter((e) => e.totalPlaytimeMinutes === 0).length,
   };
 
-  return { entries, stats, errors };
+  return { entries, stats, errors, syncedAt: new Date().toISOString() };
 }
 
 export function platformLabel(platform: Platform): string {

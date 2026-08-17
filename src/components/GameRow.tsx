@@ -28,6 +28,7 @@ function TrophyLine({
 
 export default function GameRow({ entry }: { entry: LibraryEntry }) {
   const [expanded, setExpanded] = useState(false);
+  const [iconFailed, setIconFailed] = useState(false);
   const [achievements, setAchievements] = useState<
     Record<string, AchievementSummary | null | "loading">
   >({});
@@ -55,10 +56,11 @@ export default function GameRow({ entry }: { entry: LibraryEntry }) {
         className="w-full flex items-center gap-3 text-left"
         onClick={() => setExpanded((e) => !e)}
       >
-        {primaryIcon ? (
+        {primaryIcon && !iconFailed ? (
           <img
             src={primaryIcon}
             alt=""
+            onError={() => setIconFailed(true)}
             className="w-10 h-10 rounded object-cover bg-black/30 flex-shrink-0"
           />
         ) : (

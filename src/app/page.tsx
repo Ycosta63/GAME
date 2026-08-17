@@ -1,47 +1,62 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import StatsBar from "@/components/StatsBar";
 import GameRow from "@/components/GameRow";
-import type { LibraryResponse, Platform } from "@/types/game";
+import type { LibraryEntry, LibraryResponse, Platform } from "@/types/game";
 
 const PLATFORM_LABELS: Record<Platform, string> = {
   steam: "Steam",
   psn: "PlayStation",
 };
 
+type SortMode = "playtime" | "name" | "lastPlayed";
+
+function latestPlayedTime(entry: LibraryEntry): number {
+  let latest = -Infinity;
+  for (const p of entry.platforms) {
+    if (p.lastPlayed) {
+      const t = new Date(p.lastPlayed).getTime();
+      if (!Number.isNaN(t) && t > latest) latest = t;
+    }
+  }
+  return latest;
+}
+
 export default function DashboardPage() {
   const [data, setData] = useState<LibraryResponse | null>(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const [search, setSearch] = useState("");
   const [platformFilter, setPlatformFilter] = useState<Platform | "all">("all");
   const [duplicatesOnly, setDuplicatesOnly] = useState(false);
+  const [hideNeverPlayed, setHideNeverPlayed] = useState(false);
+  const [sortMode, setSortMode] = useState<SortMode>("playtime");
+
+  const load = useCallback((force: boolean) => {
+    if (force) setRefreshing(true);
+    else setLoading(true);
+    setError(null);
+    fetch(force ? "/api/library?force=1" : "/api/library")
+      .then((res) => res.json())
+      .then((json: LibraryResponse) => setData(json))
+      .catch(() => setError("Impossible de charger la bibliothèque."))
+      .finally(() => {
+        setLoading(false);
+        setRefreshing(false);
+      });
+  }, []);
 
   useEffect(() => {
-    let cancelled = false;
-    setLoading(true);
-    fetch("/api/library")
-      .then((res) => res.json())
-      .then((json: LibraryResponse) => {
-        if (!cancelled) setData(json);
-      })
-      .catch(() => {
-        if (!cancelled) setError("Impossible de charger la bibliothèque.");
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+    load(false);
+  }, [load]);
 
   const filteredEntries = useMemo(() => {
     if (!data) return [];
-    return data.entries.filter((entry) => {
+    const filtered = data.entries.filter((entry) => {
       if (
         search.trim() &&
         !entry.displayName.toLowerCase().includes(search.trim().toLowerCase())
@@ -57,20 +72,50 @@ export default function DashboardPage() {
       if (duplicatesOnly && !entry.isDuplicate) {
         return false;
       }
+      if (hideNeverPlayed && entry.totalPlaytimeMinutes === 0) {
+        return false;
+      }
       return true;
     });
-  }, [data, search, platformFilter, duplicatesOnly]);
+
+    const sorted = [...filtered];
+    if (sortMode === "name") {
+      sorted.sort((a, b) => a.displayName.localeCompare(b.displayName, "fr"));
+    } else if (sortMode === "lastPlayed") {
+      sorted.sort((a, b) => latestPlayedTime(b) - latestPlayedTime(a));
+    } else {
+      sorted.sort((a, b) => b.totalPlaytimeMinutes - a.totalPlaytimeMinutes);
+    }
+    return sorted;
+  }, [data, search, platformFilter, duplicatesOnly, hideNeverPlayed, sortMode]);
 
   const notConfigured =
     data && data.entries.length === 0 && data.errors.length === 0;
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold">Ta bibliothèque</h1>
-        <p className="text-white/50 text-sm mt-1">
-          Tous tes jeux Steam et PlayStation, réunis au même endroit.
-        </p>
+      <div className="flex items-start justify-between gap-4 flex-wrap">
+        <div>
+          <h1 className="text-2xl font-semibold">Ta bibliothèque</h1>
+          <p className="text-white/50 text-sm mt-1">
+            Tous tes jeux Steam et PlayStation, réunis au même endroit.
+          </p>
+        </div>
+        {data && data.entries.length > 0 && (
+          <div className="text-right">
+            <button
+              onClick={() => load(true)}
+              disabled={refreshing}
+              className="bg-[#14161b] border border-white/10 hover:border-white/30 text-sm px-3 py-2 rounded-lg transition-colors disabled:opacity-50"
+            >
+              {refreshing ? "Actualisation…" : "↻ Actualiser"}
+            </button>
+            <div className="text-white/30 text-xs mt-1">
+              Synchronisé à{" "}
+              {new Date(data.syncedAt).toLocaleTimeString("fr-FR")}
+            </div>
+          </div>
+        )}
       </div>
 
       {loading && <div className="text-white/50">Chargement…</div>}
@@ -127,6 +172,15 @@ export default function DashboardPage() {
               <option value="steam">Steam</option>
               <option value="psn">PlayStation</option>
             </select>
+            <select
+              value={sortMode}
+              onChange={(e) => setSortMode(e.target.value as SortMode)}
+              className="bg-[#14161b] border border-white/10 rounded-lg px-3 py-2 text-sm outline-none focus:border-white/30"
+            >
+              <option value="playtime">Trier par temps de jeu</option>
+              <option value="name">Trier par nom</option>
+              <option value="lastPlayed">Trier par dernière session</option>
+            </select>
             <label className="flex items-center gap-2 text-sm text-white/70 select-none">
               <input
                 type="checkbox"
@@ -134,6 +188,14 @@ export default function DashboardPage() {
                 onChange={(e) => setDuplicatesOnly(e.target.checked)}
               />
               Doublons uniquement
+            </label>
+            <label className="flex items-center gap-2 text-sm text-white/70 select-none">
+              <input
+                type="checkbox"
+                checked={hideNeverPlayed}
+                onChange={(e) => setHideNeverPlayed(e.target.checked)}
+              />
+              Masquer les jeux jamais joués
             </label>
             <span className="text-white/40 text-xs ml-auto">
               {filteredEntries.length} jeu(x) affiché(s)

@@ -43,6 +43,10 @@ export default function StatsBar({ stats }: { stats: LibraryStats }) {
         value={String(stats.totalTrophies)}
         hint={`${stats.totalPlatinums} platine(s)`}
       />
+      <StatCard
+        label="Jamais joués"
+        value={String(stats.neverPlayed)}
+      />
     </div>
   );
 }

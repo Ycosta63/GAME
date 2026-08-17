@@ -59,12 +59,17 @@ l'étape ci-dessus.
 - Liste unifiée de tous les jeux, avec badge du/des launcher(s)
 - Détection des doublons (même jeu possédé sur Steam **et** PlayStation),
   avec regroupement par titre normalisé (ignore la ponctuation, les
-  éditions « Deluxe/GOTY/Remastered », etc.)
+  éditions « Deluxe/GOTY/Remastered », et les chiffres romains à 2+
+  lettres — « Dark Souls III » ≡ « Dark Souls 3 »)
 - Temps de jeu par jeu et cumulé par plateforme
 - Trophées PlayStation (platine/or/argent/bronze + % de complétion)
 - Succès Steam (chargés à la demande en dépliant un jeu, pour éviter de
   spammer l'API sur une grosse bibliothèque)
-- Recherche, filtre par launcher, filtre « doublons uniquement »
+- Recherche, filtre par launcher, filtre « doublons uniquement », filtre
+  « masquer les jeux jamais joués »
+- Tri par temps de jeu, nom, ou dernière session
+- Bouton « Actualiser » pour forcer une resynchronisation immédiate
+  (bypass du cache de 5 min), avec horodatage de la dernière synchro
 
 ## Limites connues
 
