@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import type { AchievementSummary, LibraryEntry } from "@/types/game";
 import PlatformBadge from "./PlatformBadge";
 import { formatDate, formatHours } from "@/lib/format";
+import { placeholderGradient } from "@/lib/placeholder";
 
 function TrophyLine({
   platinum,
@@ -74,34 +75,62 @@ export default function GameDetailModal({
         <button
           onClick={onClose}
           aria-label="Fermer"
-          className="absolute top-3 right-3 text-shelf-muted hover:text-shelf-text w-8 h-8 flex items-center justify-center rounded-full bg-shelf-surface transition-colors"
+          className="absolute top-3 right-3 z-10 text-white/80 hover:text-white w-8 h-8 flex items-center justify-center rounded-full bg-black/40 backdrop-blur-sm transition-colors"
         >
           ✕
         </button>
 
-        <div className="flex gap-4 p-5">
-          <div className="w-24 flex-shrink-0 aspect-[2/3] rounded-md overflow-hidden bg-shelf-surface">
-            {cover && (
+        <div className="relative overflow-hidden rounded-t-xl">
+          <div className="absolute inset-0">
+            {cover ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={cover} alt="" className="w-full h-full object-cover" />
+              <img
+                src={cover}
+                alt=""
+                className="w-full h-full object-cover scale-110 blur-2xl opacity-40"
+              />
+            ) : (
+              <div
+                className="w-full h-full"
+                style={{ background: placeholderGradient(entry.displayName) }}
+              />
             )}
+            <div className="absolute inset-0 bg-gradient-to-b from-shelf-card/20 via-shelf-card/80 to-shelf-card" />
           </div>
-          <div className="min-w-0 pt-1">
-            <h2 className="font-display text-xl font-semibold text-shelf-text text-balance">
-              {entry.displayName}
-            </h2>
-            <div className="flex items-center gap-2 mt-2 flex-wrap">
-              {entry.platforms.map((p) => (
-                <PlatformBadge key={p.platform} platform={p.platform} />
-              ))}
-              {entry.isDuplicate && (
-                <span className="text-[10px] uppercase tracking-wide text-rust border border-rust/40 rounded-full px-2 py-0.5">
-                  Doublon
-                </span>
+
+          <div className="relative flex gap-4 p-5">
+            <div className="w-28 flex-shrink-0 aspect-[2/3] rounded-md overflow-hidden shadow-lg shadow-black/50 bg-shelf-surface">
+              {cover ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={cover} alt="" className="w-full h-full object-cover" />
+              ) : (
+                <div
+                  className="w-full h-full flex items-center justify-center p-2"
+                  style={{ background: placeholderGradient(entry.displayName) }}
+                >
+                  <span className="font-display text-shelf-text/80 text-xs text-center leading-snug line-clamp-5">
+                    {entry.displayName}
+                  </span>
+                </div>
               )}
             </div>
-            <div className="text-shelf-muted text-sm mt-2">
-              {formatHours(entry.totalPlaytimeMinutes)} au total
+            <div className="min-w-0 pt-1">
+              <h2 className="font-display text-xl font-semibold text-shelf-text text-balance">
+                {entry.displayName}
+              </h2>
+              <div className="flex items-center gap-2 mt-2 flex-wrap">
+                {entry.platforms.map((p) => (
+                  <PlatformBadge key={p.platform} platform={p.platform} />
+                ))}
+                {entry.isDuplicate && (
+                  <span className="text-[10px] uppercase tracking-wide text-rust border border-rust/40 rounded-full px-2 py-0.5">
+                    Doublon
+                  </span>
+                )}
+              </div>
+              <div className="text-shelf-muted text-sm mt-2">
+                {formatHours(entry.totalPlaytimeMinutes)} au total
+              </div>
             </div>
           </div>
         </div>

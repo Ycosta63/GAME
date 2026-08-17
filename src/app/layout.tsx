@@ -5,6 +5,7 @@ import { getServerSession } from "next-auth";
 import { authEnabled, authOptions } from "@/lib/authOptions";
 import LogoutButton from "@/components/LogoutButton";
 import ShelfieMark from "@/components/ShelfieMark";
+import NavLinks from "@/components/NavLinks";
 import "./globals.css";
 
 const displayFont = Fraunces({
@@ -45,18 +46,7 @@ export default async function RootLayout({
                 </span>
               </Link>
               <nav className="flex items-center gap-5 text-sm">
-                <Link
-                  href="/"
-                  className="text-shelf-muted hover:text-shelf-text transition-colors"
-                >
-                  Bibliothèque
-                </Link>
-                <Link
-                  href="/settings"
-                  className="text-shelf-muted hover:text-shelf-text transition-colors"
-                >
-                  Réglages
-                </Link>
+                <NavLinks />
                 {session?.user && (
                   <div className="flex items-center gap-2">
                     {session.user.image && (

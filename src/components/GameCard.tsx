@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { LibraryEntry } from "@/types/game";
 import { formatHours } from "@/lib/format";
+import { placeholderGradient } from "@/lib/placeholder";
 
 function steamFallbackUrl(entry: LibraryEntry): string | undefined {
   const steam = entry.platforms.find((p) => p.platform === "steam");
@@ -37,8 +38,11 @@ export default function GameCard({
           className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.04]"
         />
       ) : (
-        <div className="absolute inset-0 flex items-center justify-center p-3">
-          <span className="font-display text-shelf-muted text-sm text-center leading-snug line-clamp-5">
+        <div
+          className="absolute inset-0 flex items-center justify-center p-3 transition-transform duration-300 group-hover:scale-[1.04]"
+          style={{ background: placeholderGradient(entry.displayName) }}
+        >
+          <span className="font-display text-shelf-text/80 text-sm text-center leading-snug line-clamp-5">
             {entry.displayName}
           </span>
         </div>

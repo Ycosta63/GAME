@@ -6,6 +6,7 @@ import StatsBar from "@/components/StatsBar";
 import GameCard from "@/components/GameCard";
 import GameDetailModal from "@/components/GameDetailModal";
 import ShelfieMark from "@/components/ShelfieMark";
+import LibrarySkeleton from "@/components/LibrarySkeleton";
 import type { LibraryEntry, LibraryResponse, Platform } from "@/types/game";
 
 const PLATFORM_LABELS: Record<Platform, string> = {
@@ -127,7 +128,7 @@ export default function DashboardPage() {
         )}
       </div>
 
-      {loading && <div className="text-shelf-muted">Chargement…</div>}
+      {loading && <LibrarySkeleton />}
       {error && (
         <div className="bg-rust/10 border border-rust/30 text-rust rounded-lg px-4 py-3 text-sm">
           {error}
@@ -165,20 +166,32 @@ export default function DashboardPage() {
         <>
           <StatsBar stats={data.stats} />
 
-          <div className="flex flex-wrap gap-3 items-center">
-            <input
-              type="text"
-              placeholder="Rechercher un jeu…"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="bg-shelf-card border border-shelf-border rounded-lg px-3 py-2 text-sm text-shelf-text flex-1 min-w-[200px] outline-none focus:border-brass/50"
-            />
+          <div className="flex flex-wrap gap-2 items-center">
+            <div className="relative flex-1 min-w-[200px]">
+              <svg
+                viewBox="0 0 20 20"
+                className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-shelf-muted pointer-events-none"
+                fill="none"
+                aria-hidden="true"
+              >
+                <circle cx="9" cy="9" r="6" stroke="currentColor" strokeWidth="1.6" />
+                <path d="M17 17l-4-4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+              </svg>
+              <input
+                type="text"
+                placeholder="Rechercher un jeu…"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="w-full bg-shelf-card border border-shelf-border rounded-full pl-9 pr-3 py-2 text-sm text-shelf-text outline-none focus:border-brass/50"
+              />
+            </div>
+
             <select
               value={platformFilter}
               onChange={(e) =>
                 setPlatformFilter(e.target.value as Platform | "all")
               }
-              className="bg-shelf-card border border-shelf-border rounded-lg px-3 py-2 text-sm text-shelf-text outline-none focus:border-brass/50"
+              className="bg-transparent border border-shelf-border rounded-full px-3 py-2 text-sm text-shelf-muted outline-none focus:border-brass/50 hover:text-shelf-text cursor-pointer transition-colors"
             >
               <option value="all">Tous les launchers</option>
               <option value="steam">Steam</option>
@@ -187,28 +200,34 @@ export default function DashboardPage() {
             <select
               value={sortMode}
               onChange={(e) => setSortMode(e.target.value as SortMode)}
-              className="bg-shelf-card border border-shelf-border rounded-lg px-3 py-2 text-sm text-shelf-text outline-none focus:border-brass/50"
+              className="bg-transparent border border-shelf-border rounded-full px-3 py-2 text-sm text-shelf-muted outline-none focus:border-brass/50 hover:text-shelf-text cursor-pointer transition-colors"
             >
-              <option value="playtime">Trier par temps de jeu</option>
-              <option value="name">Trier par nom</option>
-              <option value="lastPlayed">Trier par dernière session</option>
+              <option value="playtime">Trier : temps de jeu</option>
+              <option value="name">Trier : nom</option>
+              <option value="lastPlayed">Trier : dernière session</option>
             </select>
-            <label className="flex items-center gap-2 text-sm text-shelf-muted select-none">
-              <input
-                type="checkbox"
-                checked={duplicatesOnly}
-                onChange={(e) => setDuplicatesOnly(e.target.checked)}
-              />
+
+            <button
+              onClick={() => setDuplicatesOnly((v) => !v)}
+              className={`text-sm px-3 py-2 rounded-full border transition-colors ${
+                duplicatesOnly
+                  ? "bg-brass/15 text-brass border-brass/40"
+                  : "bg-transparent text-shelf-muted border-shelf-border hover:text-shelf-text"
+              }`}
+            >
               Doublons uniquement
-            </label>
-            <label className="flex items-center gap-2 text-sm text-shelf-muted select-none">
-              <input
-                type="checkbox"
-                checked={hideNeverPlayed}
-                onChange={(e) => setHideNeverPlayed(e.target.checked)}
-              />
-              Masquer les jeux jamais joués
-            </label>
+            </button>
+            <button
+              onClick={() => setHideNeverPlayed((v) => !v)}
+              className={`text-sm px-3 py-2 rounded-full border transition-colors ${
+                hideNeverPlayed
+                  ? "bg-brass/15 text-brass border-brass/40"
+                  : "bg-transparent text-shelf-muted border-shelf-border hover:text-shelf-text"
+              }`}
+            >
+              Jamais joués masqués
+            </button>
+
             <span className="text-shelf-muted/70 text-xs ml-auto">
               {filteredEntries.length} jeu(x) affiché(s)
             </span>
