@@ -24,8 +24,11 @@ peuvent casser à tout moment. Le code est structuré (`src/lib/`, type
   sur un hébergeur serverless comme Vercel — voir la section Héberger).
   Les données de bibliothèque sont récupérées à la demande auprès des API
   et mises en cache en mémoire quelques minutes.
-- Le site entier peut être protégé par un mot de passe (variable
-  `APP_PASSWORD`) — recommandé dès que l'app est accessible publiquement.
+- Connexion via **Google** (NextAuth) : chaque visiteur se connecte avec
+  son propre compte Google et a sa bibliothèque privée, isolée des autres
+  utilisateurs — personne ne voit les jeux ou les identifiants Steam/PSN
+  de quelqu'un d'autre. Sans identifiants Google configurés, l'app reste
+  ouverte en mode mono-utilisateur (pratique pour `npm run dev`).
 
 ## Démarrer
 
@@ -73,8 +76,10 @@ l'étape ci-dessus.
 - Tri par temps de jeu, nom, ou dernière session
 - Bouton « Actualiser » pour forcer une resynchronisation immédiate
   (bypass du cache de 5 min), avec horodatage de la dernière synchro
+- Multi-utilisateur : connexion Google, bibliothèque et identifiants
+  Steam/PSN isolés par compte
 
-## Héberger le site (gratuitement, en sécurisé)
+## Héberger le site pour que tout le monde puisse l'utiliser
 
 Recommandé : **Vercel**, l'hébergeur officiel de Next.js — gratuit, HTTPS
 automatique, aucun serveur à gérer/patcher, aucune carte bancaire requise.
@@ -84,18 +89,44 @@ automatique, aucun serveur à gérer/patcher, aucune carte bancaire requise.
 Le code est déjà sur GitHub si tu es parti de ce dépôt. Sinon : crée un
 dépôt sur https://github.com/new et pousse ce projet dedans.
 
-### 2. Créer une base Upstash Redis gratuite (pour que tes identifiants persistent)
+### 2. Créer une base Upstash Redis gratuite (pour que les identifiants de chaque utilisateur persistent)
 
-Sur Vercel, le disque des fonctions serverless n'est pas persistant : le
-fichier `data/settings.json` ne survivrait pas. Il faut donc une petite
-base gratuite pour stocker tes identifiants Steam/PSN.
+Sur Vercel, le disque des fonctions serverless n'est pas persistant. Il
+faut donc une petite base gratuite pour stocker les identifiants Steam/PSN
+de chaque compte.
 
 1. Va sur https://console.upstash.com (compte gratuit, pas de carte
    bancaire), crée une base **Redis** (région au choix, plan gratuit).
-2. Dans l'onglet **REST API** de la base, copie `UPSTASH_REDIS_REST_URL`
-   et `UPSTASH_REDIS_REST_TOKEN`.
+2. Dans l'onglet **Details** de la base, section **REST API**, copie
+   `UPSTASH_REDIS_REST_URL` et `UPSTASH_REDIS_REST_TOKEN`.
 
-### 3. Déployer sur Vercel
+### 3. Créer des identifiants Google OAuth (pour que chacun se connecte avec son compte)
+
+1. Va sur https://console.cloud.google.com/apis/credentials (crée un
+   projet si on te le demande — nom libre, ex. "Game Library Hub").
+2. Dans **OAuth consent screen** :
+   - Type d'utilisateur : **External**
+   - Renseigne un nom d'appli, un email de support, un email développeur
+   - Une fois créé, mets le statut de publication sur **In production**
+     (bouton "Publish App") pour que n'importe qui puisse se connecter, pas
+     seulement des comptes de test que tu ajoutes toi-même
+3. Dans **Credentials** → **Create Credentials** → **OAuth client ID** :
+   - Type d'application : **Web application**
+   - **Authorized redirect URIs**, ajoute :
+     `https://TON-DOMAINE.vercel.app/api/auth/callback/google`
+     (tu connaîtras l'URL exacte après le premier déploiement à l'étape 4 —
+     tu pourras revenir modifier cette valeur ensuite)
+   - Clique sur **Create**, copie le **Client ID** et le **Client Secret**
+
+⚠️ Tant que l'appli reste en statut "Testing", seuls les comptes Google que
+tu ajoutes explicitement comme testeurs peuvent se connecter. Passe bien en
+"In production" pour un accès public. Avec seulement les scopes de base
+(email/profil), Google n'exige généralement pas de vérification manuelle
+poussée, mais peut afficher un avertissement "app non vérifiée" tant que
+l'app n'est pas soumise à vérification (l'utilisateur peut cliquer sur
+"Advanced → Continuer" pour passer outre).
+
+### 4. Déployer sur Vercel
 
 1. Va sur https://vercel.com/new, connecte ton compte GitHub, importe le
    dépôt. Vercel détecte Next.js automatiquement — aucune configuration
@@ -103,33 +134,38 @@ base gratuite pour stocker tes identifiants Steam/PSN.
 2. Avant de cliquer sur *Deploy*, ouvre **Environment Variables** et
    ajoute :
    - `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN` (étape 2)
-   - `APP_PASSWORD` : le mot de passe qui protégera tout le site (choisis-en
-     un fort — c'est ce qui empêche n'importe qui avec l'URL de voir ta
-     bibliothèque ou de reconfigurer tes comptes)
-   - `AUTH_SECRET` : une deuxième chaîne aléatoire quelconque (sert à
-     signer le cookie de session ; sans elle `APP_PASSWORD` est réutilisé,
-     ce qui fonctionne mais est un peu moins robuste)
-3. Clique sur **Deploy**. Après quelques dizaines de secondes, l'app est
-   en ligne sur une URL `https://....vercel.app`.
-4. Ouvre l'URL, entre ton `APP_PASSWORD`, puis va dans **Réglages** pour
-   connecter Steam et PlayStation comme en local.
+   - `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` (étape 3)
+   - `NEXTAUTH_SECRET` : une chaîne aléatoire quelconque (sert à signer les
+     cookies de session — génère-en une avec `openssl rand -hex 32`)
+   - `NEXTAUTH_URL` : laisse vide pour l'instant si tu ne connais pas
+     encore ton domaine final, sinon `https://TON-DOMAINE.vercel.app`
+3. Clique sur **Deploy**. Après ~1 minute, l'app est en ligne sur une URL
+   `https://....vercel.app`.
+4. Retourne dans Google Cloud Console → Credentials → ton client OAuth, et
+   mets à jour l'**Authorized redirect URI** avec l'URL réelle obtenue :
+   `https://TON-DOMAINE-REEL.vercel.app/api/auth/callback/google`.
+   Si tu avais laissé `NEXTAUTH_URL` vide, ajoute-le maintenant dans Vercel
+   avec cette même URL puis redéploie (Vercel → Deployments → ⋯ → Redeploy).
+5. Ouvre le site, clique sur **Continuer avec Google**, puis va dans
+   **Réglages** pour connecter Steam et PlayStation — ces identifiants sont
+   propres à ton compte, chaque visiteur configure les siens.
 
 Tout redéploiement futur (nouveau `git push`) réutilise la même base
-Upstash : tes identifiants ne sont pas perdus.
+Upstash : les identifiants de chaque utilisateur ne sont jamais perdus.
 
 ### Alternative sans base de données : Render.com
 
 Si tu préfères ne pas créer de compte Upstash, **Render.com** (gratuit,
 sans carte bancaire) fait tourner un vrai serveur avec un disque qui
-persiste tant que le service ne redémarre pas — `data/settings.json`
-fonctionne alors sans aucun changement de code. Pense quand même à définir
-`APP_PASSWORD` (et `AUTH_SECRET`) dans les variables d'environnement du
-service pour garder le site protégé.
+persiste tant que le service ne redémarre pas — le stockage par fichier
+fonctionne alors sans aucun changement de code. La connexion Google
+(étapes 3-4 ci-dessus, avec l'URL Render à la place de l'URL Vercel)
+fonctionne pareil.
 
 Limites du plan gratuit Render : le service se met en veille après 15 min
 d'inactivité (le premier accès prend 30-60s pour le réveiller), et un
-redéploiement remet le disque à zéro — il faudra alors ressaisir tes
-identifiants Steam/PSN dans Réglages.
+redéploiement remet le disque à zéro — les utilisateurs devront alors
+ressaisir leurs identifiants Steam/PSN dans Réglages.
 
 ## Limites connues
 
@@ -143,7 +179,7 @@ identifiants Steam/PSN dans Réglages.
   Optimizer/Server Actions, le risque réel est faible pour un usage
   personnel auto-hébergé ; envisager la migration si l'app est un jour
   exposée publiquement.
-- La protection par mot de passe (`APP_PASSWORD`) n'a pas de limitation de
-  tentatives (pas de rate limiting) : suffisant contre un visiteur au
-  hasard, pas contre quelqu'un qui bruteforce activement. Choisis un mot
-  de passe long plutôt qu'un mot du dictionnaire.
+- La consommation des API Steam/PSN (clé API, appels) est partagée par
+  tout le monde qui utilise l'app avec ses propres identifiants — chaque
+  utilisateur fournit sa propre clé Steam et son propre jeton PSN, donc pas
+  de quota mutualisé entre utilisateurs.

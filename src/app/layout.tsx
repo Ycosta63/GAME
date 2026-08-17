@@ -1,5 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { getServerSession } from "next-auth";
+import { authEnabled, authOptions } from "@/lib/authOptions";
+import LogoutButton from "@/components/LogoutButton";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -8,11 +11,13 @@ export const metadata: Metadata = {
     "Toute ta bibliothèque de jeux Steam et PlayStation au même endroit.",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const session = authEnabled ? await getServerSession(authOptions) : null;
+
   return (
     <html lang="fr">
       <body>
@@ -35,15 +40,18 @@ export default function RootLayout({
                 >
                   Réglages
                 </Link>
-                {process.env.APP_PASSWORD && (
-                  <form action="/api/logout" method="post">
-                    <button
-                      type="submit"
-                      className="text-white/70 hover:text-white transition-colors"
-                    >
-                      Déconnexion
-                    </button>
-                  </form>
+                {session?.user && (
+                  <div className="flex items-center gap-2">
+                    {session.user.image && (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={session.user.image}
+                        alt=""
+                        className="w-6 h-6 rounded-full"
+                      />
+                    )}
+                    <LogoutButton />
+                  </div>
                 )}
               </nav>
             </div>

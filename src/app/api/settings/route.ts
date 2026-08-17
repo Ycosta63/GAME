@@ -6,50 +6,75 @@ import {
   writeSettings,
 } from "@/lib/settings";
 import { invalidate } from "@/lib/cache";
+import { UnauthenticatedError, currentUserId } from "@/lib/currentUser";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  const settings = await readSettings();
-  return NextResponse.json(redactSettings(settings));
+  try {
+    const userId = await currentUserId();
+    const settings = await readSettings(userId);
+    return NextResponse.json(redactSettings(settings));
+  } catch (err) {
+    if (err instanceof UnauthenticatedError) {
+      return NextResponse.json({ error: err.message }, { status: 401 });
+    }
+    throw err;
+  }
 }
 
 export async function POST(req: NextRequest) {
-  const body = await req.json().catch(() => ({}));
-  const patch: Record<string, string> = {};
+  try {
+    const userId = await currentUserId();
+    const body = await req.json().catch(() => ({}));
+    const patch: Record<string, string> = {};
 
-  if (typeof body.steamApiKey === "string" && body.steamApiKey.trim()) {
-    patch.steamApiKey = body.steamApiKey.trim();
-  }
-  if (typeof body.steamId === "string" && body.steamId.trim()) {
-    patch.steamId = body.steamId.trim();
-  }
-  if (typeof body.psnNpsso === "string" && body.psnNpsso.trim()) {
-    patch.psnNpsso = body.psnNpsso.trim();
-  }
+    if (typeof body.steamApiKey === "string" && body.steamApiKey.trim()) {
+      patch.steamApiKey = body.steamApiKey.trim();
+    }
+    if (typeof body.steamId === "string" && body.steamId.trim()) {
+      patch.steamId = body.steamId.trim();
+    }
+    if (typeof body.psnNpsso === "string" && body.psnNpsso.trim()) {
+      patch.psnNpsso = body.psnNpsso.trim();
+    }
 
-  const next = await mergeSettings(patch);
-  invalidate("steam:");
-  invalidate("psn:");
+    const next = await mergeSettings(userId, patch);
+    invalidate("steam:");
+    invalidate("psn:");
 
-  return NextResponse.json(redactSettings(next));
+    return NextResponse.json(redactSettings(next));
+  } catch (err) {
+    if (err instanceof UnauthenticatedError) {
+      return NextResponse.json({ error: err.message }, { status: 401 });
+    }
+    throw err;
+  }
 }
 
 export async function DELETE(req: NextRequest) {
-  const { searchParams } = new URL(req.url);
-  const field = searchParams.get("field");
-  const current = await readSettings();
+  try {
+    const userId = await currentUserId();
+    const { searchParams } = new URL(req.url);
+    const field = searchParams.get("field");
+    const current = await readSettings(userId);
 
-  if (field === "steam") {
-    delete current.steamApiKey;
-    delete current.steamId;
-  } else if (field === "psn") {
-    delete current.psnNpsso;
+    if (field === "steam") {
+      delete current.steamApiKey;
+      delete current.steamId;
+    } else if (field === "psn") {
+      delete current.psnNpsso;
+    }
+
+    await writeSettings(userId, current);
+    invalidate("steam:");
+    invalidate("psn:");
+
+    return NextResponse.json(redactSettings(current));
+  } catch (err) {
+    if (err instanceof UnauthenticatedError) {
+      return NextResponse.json({ error: err.message }, { status: 401 });
+    }
+    throw err;
   }
-
-  await writeSettings(current);
-  invalidate("steam:");
-  invalidate("psn:");
-
-  return NextResponse.json(redactSettings(current));
 }

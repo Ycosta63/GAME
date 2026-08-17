@@ -10,8 +10,8 @@ import type {
   RawGame,
 } from "@/types/game";
 
-export async function buildLibrary(): Promise<LibraryResponse> {
-  const settings = await readSettings();
+export async function buildLibrary(userId: string): Promise<LibraryResponse> {
+  const settings = await readSettings(userId);
   const errors: LibraryResponse["errors"] = [];
   const allGames: RawGame[] = [];
 
