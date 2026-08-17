@@ -1,20 +1,27 @@
 # Shelfie
 
-Une app web qui regroupe ta bibliothèque **Steam** et **PlayStation** au
-même endroit : tous tes jeux, sur quel launcher, les doublons entre
-plateformes, le temps de jeu et les trophées/succès.
+Une app web qui regroupe ta bibliothèque **Steam**, **GOG** et
+**PlayStation** au même endroit : tous tes jeux, sur quel launcher, les
+doublons entre plateformes, le temps de jeu et les trophées/succès.
 
-## Pourquoi seulement Steam + PlayStation ?
+## Pourquoi pas Epic, EA, Battle.net ?
 
-Steam (Steam Web API) et PlayStation (via la lib communautaire `psn-api`)
-sont les deux seuls launchers du lot (Steam, Epic, EA, Battle.net,
-PlayStation) à exposer un moyen fiable de lire une bibliothèque de jeux et
-des stats de progression. Epic, EA et Battle.net n'ont pas d'API publique
-officielle pour ça — les intégrer demanderait des méthodes non-officielles
-(lecture de fichiers locaux du launcher, API reverse-engineered) qui
-peuvent casser à tout moment. Le code est structuré (`src/lib/`, type
+Steam a une vraie API publique. PlayStation n'a pas d'API officielle mais
+la lib communautaire `psn-api` est stable et largement utilisée. GOG n'a
+pas de programme développeur public, mais son client officiel (GOG
+Galaxy) utilise un vrai système de connexion (OAuth) que des outils
+open-source réputés (Heroic Games Launcher, gogdl) réutilisent depuis des
+années de façon stable — Shelfie fait pareil.
+
+Epic, EA et Battle.net n'ont **aucune** de ces options : ni API publique,
+ni méthode communautaire stable. Les intégrer demanderait de simuler en
+douce le comportement interne de leur launcher (ce qu'a fait un projet
+comme "Legendary" pour Epic), au prix d'une fragilité réelle — ça peut
+casser à tout moment si l'éditeur change son API, avec un petit risque
+sur le compte utilisé. Le code est structuré (`src/lib/`, type
 `Platform`) pour qu'ajouter un launcher plus tard = un nouveau fichier
-`src/lib/<launcher>.ts` + une entrée dans `Platform`, sans toucher au reste.
+`src/lib/<launcher>.ts` + une entrée dans `Platform`, sans toucher au reste
+— donc faisable si tu changes d'avis, en connaissance de cause.
 
 ## Stack
 
@@ -52,6 +59,21 @@ C'est l'app elle-même qui a besoin d'**une seule** clé API Steam
 (variable `STEAM_API_KEY`, voir la section Héberger) — les visiteurs n'ont
 jamais besoin d'en créer une.
 
+## Connecter GOG
+
+GOG ne peut pas rediriger automatiquement vers Shelfie (son client OAuth
+partagé n'a qu'une seule redirection possible, une page GOG). Dans
+**Réglages** :
+
+1. Clique sur **Ouvrir la connexion GOG** (nouvel onglet), connecte-toi.
+2. Tu atterris sur une page GOG à priori vide — copie la valeur après
+   `code=` dans l'adresse de cette page.
+3. Colle-la dans Shelfie et valide.
+
+⚠️ GOG n'expose ni temps de jeu ni trophées via son API (Galaxy les suit
+uniquement en local sur ta machine) — seuls le titre et la jaquette sont
+disponibles pour ces jeux.
+
 ## Connecter PlayStation
 
 1. Connecte-toi sur https://my.playstation.com dans le même navigateur.
@@ -65,10 +87,10 @@ l'étape ci-dessus.
 ## Fonctionnalités
 
 - Liste unifiée de tous les jeux, avec badge du/des launcher(s)
-- Détection des doublons (même jeu possédé sur Steam **et** PlayStation),
-  avec regroupement par titre normalisé (ignore la ponctuation, les
-  éditions « Deluxe/GOTY/Remastered », et les chiffres romains à 2+
-  lettres — « Dark Souls III » ≡ « Dark Souls 3 »)
+- Détection des doublons (même jeu possédé sur plusieurs launchers), avec
+  regroupement par titre normalisé (ignore la ponctuation, les éditions
+  « Deluxe/GOTY/Remastered », et les chiffres romains à 2+ lettres —
+  « Dark Souls III » ≡ « Dark Souls 3 »)
 - Temps de jeu par jeu et cumulé par plateforme
 - Trophées PlayStation (platine/or/argent/bronze + % de complétion)
 - Succès Steam (chargés à la demande en dépliant un jeu, pour éviter de
@@ -184,9 +206,14 @@ ressaisir leurs identifiants Steam/PSN dans Réglages.
 ## Limites connues
 
 - Epic Games, EA (Origin/EA App) et Battle.net ne sont pas supportés (pas
-  d'API publique officielle — voir plus haut).
+  d'API publique officielle ni de méthode communautaire stable — voir plus
+  haut).
 - `psn-api` est une librairie communautaire non-officielle qui dépend de
   l'API interne de PlayStation ; elle peut casser si Sony change son API.
+- L'intégration GOG utilise les identifiants OAuth partagés de GOG Galaxy
+  (comme les outils open-source équivalents) — même logique de risque que
+  `psn-api` : peut casser si GOG change son API interne. GOG n'expose ni
+  temps de jeu ni trophées.
 - Un `npm audit` signale des vulnérabilités connues de Next.js/PostCSS qui
   ne sont corrigées que dans Next 16 (changement majeur non appliqué ici).
   Sans exposition publique multi-utilisateurs ni usage de l'Image
