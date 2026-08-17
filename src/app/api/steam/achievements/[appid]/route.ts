@@ -10,16 +10,17 @@ export async function GET(
   try {
     const userId = await currentUserId();
     const settings = await readSettings(userId);
-    if (!settings.steamApiKey || !settings.steamId) {
+    const steamApiKey = settings.steamApiKey || process.env.STEAM_API_KEY;
+    if (!steamApiKey || !settings.steamId) {
       return NextResponse.json(
         { error: "Steam non configuré" },
         { status: 400 }
       );
     }
 
-    const steamId = await resolveSteamId(settings.steamApiKey, settings.steamId);
+    const steamId = await resolveSteamId(steamApiKey, settings.steamId);
     const summary = await fetchAchievementSummary(
-      settings.steamApiKey,
+      steamApiKey,
       steamId,
       params.appid
     );

@@ -42,13 +42,15 @@ comptes.
 
 ## Connecter Steam
 
-1. Génère une clé API sur https://steamcommunity.com/dev/apikey (n'importe
-   quel nom de domaine convient, ex. `localhost`).
-2. Ton profil doit être **public** : Steam → Modifier le profil →
-   Confidentialité → « Détails du jeu » sur Public (sinon l'API renvoie une
-   bibliothèque vide).
-3. Renseigne ta clé API et ton SteamID64 (ou ton nom de profil personnalisé,
-   ex. `steamcommunity.com/id/TONPSEUDO` → `TONPSEUDO`).
+Dans **Réglages**, clique sur **Se connecter avec Steam** — ça ouvre la
+page de connexion Steam officielle (OpenID), pas de clé API à saisir.
+Ton profil doit juste être **public** (Steam → Modifier le profil →
+Confidentialité → « Détails du jeu » sur Public), sinon l'API renvoie une
+bibliothèque vide même une fois connecté.
+
+C'est l'app elle-même qui a besoin d'**une seule** clé API Steam
+(variable `STEAM_API_KEY`, voir la section Héberger) — les visiteurs n'ont
+jamais besoin d'en créer une.
 
 ## Connecter PlayStation
 
@@ -89,7 +91,15 @@ automatique, aucun serveur à gérer/patcher, aucune carte bancaire requise.
 Le code est déjà sur GitHub si tu es parti de ce dépôt. Sinon : crée un
 dépôt sur https://github.com/new et pousse ce projet dedans.
 
-### 2. Créer une base Upstash Redis gratuite (pour que les identifiants de chaque utilisateur persistent)
+### 2. Créer une clé API Steam (une seule, pour toute l'app)
+
+Va sur https://steamcommunity.com/dev/apikey (n'importe quel nom de
+domaine convient, ex. ton domaine Vercel ou `localhost`), copie la clé.
+C'est la seule clé Steam nécessaire — tous les visiteurs qui se
+connectent avec leur compte Steam l'utiliseront pour lire leur propre
+bibliothèque publique, sans jamais en créer une eux-mêmes.
+
+### 3. Créer une base Upstash Redis gratuite (pour que les identifiants de chaque utilisateur persistent)
 
 Sur Vercel, le disque des fonctions serverless n'est pas persistant. Il
 faut donc une petite base gratuite pour stocker les identifiants Steam/PSN
@@ -100,7 +110,7 @@ de chaque compte.
 2. Dans l'onglet **Details** de la base, section **REST API**, copie
    `UPSTASH_REDIS_REST_URL` et `UPSTASH_REDIS_REST_TOKEN`.
 
-### 3. Créer des identifiants Google OAuth (pour que chacun se connecte avec son compte)
+### 4. Créer des identifiants Google OAuth (pour que chacun se connecte avec son compte)
 
 1. Va sur https://console.cloud.google.com/apis/credentials (crée un
    projet si on te le demande — nom libre, ex. "Game Library Hub").
@@ -126,15 +136,16 @@ poussée, mais peut afficher un avertissement "app non vérifiée" tant que
 l'app n'est pas soumise à vérification (l'utilisateur peut cliquer sur
 "Advanced → Continuer" pour passer outre).
 
-### 4. Déployer sur Vercel
+### 5. Déployer sur Vercel
 
 1. Va sur https://vercel.com/new, connecte ton compte GitHub, importe le
    dépôt. Vercel détecte Next.js automatiquement — aucune configuration
    de build à changer.
 2. Avant de cliquer sur *Deploy*, ouvre **Environment Variables** et
    ajoute :
-   - `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN` (étape 2)
-   - `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` (étape 3)
+   - `STEAM_API_KEY` (étape 2)
+   - `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN` (étape 3)
+   - `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` (étape 4)
    - `NEXTAUTH_SECRET` : une chaîne aléatoire quelconque (sert à signer les
      cookies de session — génère-en une avec `openssl rand -hex 32`)
    - `NEXTAUTH_URL` : laisse vide pour l'instant si tu ne connais pas
@@ -146,9 +157,12 @@ l'app n'est pas soumise à vérification (l'utilisateur peut cliquer sur
    `https://TON-DOMAINE-REEL.vercel.app/api/auth/callback/google`.
    Si tu avais laissé `NEXTAUTH_URL` vide, ajoute-le maintenant dans Vercel
    avec cette même URL puis redéploie (Vercel → Deployments → ⋯ → Redeploy).
+   (Steam n'a pas besoin de cette étape — son OpenID n'a pas d'URI à
+   déclarer à l'avance.)
 5. Ouvre le site, clique sur **Continuer avec Google**, puis va dans
-   **Réglages** pour connecter Steam et PlayStation — ces identifiants sont
-   propres à ton compte, chaque visiteur configure les siens.
+   **Réglages** : Steam se connecte en un clic, PlayStation demande de
+   coller le jeton NPSSO (voir plus haut) — chaque visiteur configure les
+   siens.
 
 Tout redéploiement futur (nouveau `git push`) réutilise la même base
 Upstash : les identifiants de chaque utilisateur ne sont jamais perdus.
@@ -179,7 +193,9 @@ ressaisir leurs identifiants Steam/PSN dans Réglages.
   Optimizer/Server Actions, le risque réel est faible pour un usage
   personnel auto-hébergé ; envisager la migration si l'app est un jour
   exposée publiquement.
-- La consommation des API Steam/PSN (clé API, appels) est partagée par
-  tout le monde qui utilise l'app avec ses propres identifiants — chaque
-  utilisateur fournit sa propre clé Steam et son propre jeton PSN, donc pas
-  de quota mutualisé entre utilisateurs.
+- La clé `STEAM_API_KEY` est partagée par tous les visiteurs (c'est ce qui
+  permet à chacun de se connecter sans créer la sienne). Le quota Steam
+  (~100 000 requêtes/jour) est donc mutualisé entre tous les utilisateurs
+  de l'app — largement suffisant pour un usage personnel ou entre amis,
+  mais à garder en tête si l'app devient très fréquentée. PSN n'a pas ce
+  problème : chaque utilisateur fournit son propre jeton NPSSO.

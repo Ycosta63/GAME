@@ -90,7 +90,7 @@ export function redactSettings(settings: AppSettings) {
     steamApiKey: settings.steamApiKey ? "••••••••" : "",
     steamId: settings.steamId ?? "",
     psnNpsso: settings.psnNpsso ? "••••••••" : "",
-    hasSteam: Boolean(settings.steamApiKey && settings.steamId),
+    hasSteam: Boolean(settings.steamId),
     hasPsn: Boolean(settings.psnNpsso),
   };
 }

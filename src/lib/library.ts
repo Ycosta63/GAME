@@ -15,13 +15,17 @@ export async function buildLibrary(userId: string): Promise<LibraryResponse> {
   const errors: LibraryResponse["errors"] = [];
   const allGames: RawGame[] = [];
 
-  if (settings.steamApiKey && settings.steamId) {
+  const steamApiKey = settings.steamApiKey || process.env.STEAM_API_KEY;
+  if (settings.steamId && !steamApiKey) {
+    errors.push({
+      platform: "steam",
+      message:
+        "Compte Steam connecté, mais l'app n'a pas de clé API Steam configurée (STEAM_API_KEY côté serveur).",
+    });
+  } else if (steamApiKey && settings.steamId) {
     try {
-      const steamId = await resolveSteamId(
-        settings.steamApiKey,
-        settings.steamId
-      );
-      const games = await fetchOwnedGames(settings.steamApiKey, steamId);
+      const steamId = await resolveSteamId(steamApiKey, settings.steamId);
+      const games = await fetchOwnedGames(steamApiKey, steamId);
       allGames.push(...games);
     } catch (err) {
       errors.push({
