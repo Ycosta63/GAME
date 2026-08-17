@@ -41,6 +41,7 @@ export default function StatsBar({ stats }: { stats: LibraryStats }) {
       />
       <Stat value={String(stats.byPlatform.steam.games)} label="Steam" />
       <Stat value={String(stats.byPlatform.psn.games)} label="PlayStation" />
+      <Stat value={String(stats.byPlatform.gog.games)} label="GOG" />
       <Stat value={String(stats.totalTrophies)} label="Trophées" />
       <Stat value={String(stats.neverPlayed)} label="Jamais joués" />
     </div>

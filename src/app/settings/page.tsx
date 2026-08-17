@@ -8,6 +8,7 @@ interface RedactedSettings {
   psnNpsso: string;
   hasSteam: boolean;
   hasPsn: boolean;
+  hasGog: boolean;
 }
 
 function SteamIcon() {
@@ -18,11 +19,21 @@ function SteamIcon() {
   );
 }
 
+function GogIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path d="M4 4h7v5H8v11H4V4zm9 0h7v16h-4V9h-3V4z" />
+    </svg>
+  );
+}
+
 export default function SettingsPage() {
   const [settings, setSettings] = useState<RedactedSettings | null>(null);
   const [psnNpsso, setPsnNpsso] = useState("");
+  const [gogCode, setGogCode] = useState("");
   const [status, setStatus] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [connectingGog, setConnectingGog] = useState(false);
 
   function load() {
     fetch("/api/settings")
@@ -63,7 +74,31 @@ export default function SettingsPage() {
     }
   }
 
-  async function disconnect(field: "steam" | "psn") {
+  async function connectGog(e: React.FormEvent) {
+    e.preventDefault();
+    setConnectingGog(true);
+    setStatus(null);
+    try {
+      const res = await fetch("/api/gog/connect", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: gogCode }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      setGogCode("");
+      setStatus("Compte GOG connecté.");
+      load();
+    } catch (err) {
+      setStatus(
+        err instanceof Error ? err.message : "La connexion GOG a échoué."
+      );
+    } finally {
+      setConnectingGog(false);
+    }
+  }
+
+  async function disconnect(field: "steam" | "psn" | "gog") {
     await fetch(`/api/settings?field=${field}`, { method: "DELETE" });
     load();
   }
@@ -114,6 +149,63 @@ export default function SettingsPage() {
               <SteamIcon />
               Se connecter avec Steam
             </a>
+          </>
+        )}
+      </section>
+
+      <section className="bg-shelf-card border border-shelf-border rounded-xl p-4 space-y-3">
+        <div className="flex items-center justify-between">
+          <h2 className="font-semibold text-shelf-text">GOG</h2>
+          {settings?.hasGog && (
+            <span className="text-xs text-sage">Connecté</span>
+          )}
+        </div>
+
+        {settings?.hasGog ? (
+          <button
+            type="button"
+            onClick={() => disconnect("gog")}
+            className="text-xs text-rust hover:text-rust/80 underline"
+          >
+            Déconnecter GOG
+          </button>
+        ) : (
+          <>
+            <p className="text-xs text-shelf-muted">
+              GOG ne redirige pas automatiquement vers Shelfie : 1. ouvre la
+              connexion GOG dans un nouvel onglet et connecte-toi. 2. Sur la
+              page blanche qui s&apos;affiche ensuite, copie la valeur après{" "}
+              <code className="bg-shelf-surface px-1 rounded">code=</code>{" "}
+              dans l&apos;adresse. 3. Colle-la ci-dessous.
+              <br />
+              (GOG n&apos;a pas de temps de jeu ni de trophées via son API —
+              seuls le titre et la jaquette seront disponibles.)
+            </p>
+            <a
+              href="/api/gog/login"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full flex items-center justify-center gap-2 bg-[#2e1a3d] text-[#c98fee] border border-[#4a2c63] text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-[#3b2350] transition-colors"
+            >
+              <GogIcon />
+              Ouvrir la connexion GOG
+            </a>
+            <form onSubmit={connectGog} className="flex items-center gap-3">
+              <input
+                type="text"
+                placeholder="Code copié depuis l'URL"
+                value={gogCode}
+                onChange={(e) => setGogCode(e.target.value)}
+                className="flex-1 bg-shelf-surface border border-shelf-border rounded-lg px-3 py-2 text-sm text-shelf-text outline-none focus:border-brass/50"
+              />
+              <button
+                type="submit"
+                disabled={connectingGog || !gogCode}
+                className="bg-brass text-brass-ink text-sm font-semibold px-4 py-2 rounded-lg hover:bg-brass-hover transition-colors disabled:opacity-50 flex-shrink-0"
+              >
+                {connectingGog ? "…" : "Valider"}
+              </button>
+            </form>
           </>
         )}
       </section>

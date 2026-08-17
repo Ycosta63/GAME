@@ -42,6 +42,7 @@ export async function POST(req: NextRequest) {
     const next = await mergeSettings(userId, patch);
     invalidate("steam:");
     invalidate("psn:");
+    invalidate("gog:");
 
     return NextResponse.json(redactSettings(next));
   } catch (err) {
@@ -64,11 +65,16 @@ export async function DELETE(req: NextRequest) {
       delete current.steamId;
     } else if (field === "psn") {
       delete current.psnNpsso;
+    } else if (field === "gog") {
+      delete current.gogAccessToken;
+      delete current.gogRefreshToken;
+      delete current.gogUserId;
     }
 
     await writeSettings(userId, current);
     invalidate("steam:");
     invalidate("psn:");
+    invalidate("gog:");
 
     return NextResponse.json(redactSettings(current));
   } catch (err) {

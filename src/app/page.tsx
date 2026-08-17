@@ -12,6 +12,7 @@ import type { LibraryEntry, LibraryResponse, Platform } from "@/types/game";
 const PLATFORM_LABELS: Record<Platform, string> = {
   steam: "Steam",
   psn: "PlayStation",
+  gog: "GOG",
 };
 
 type SortMode = "playtime" | "name" | "lastPlayed";
@@ -196,6 +197,7 @@ export default function DashboardPage() {
               <option value="all">Tous les launchers</option>
               <option value="steam">Steam</option>
               <option value="psn">PlayStation</option>
+              <option value="gog">GOG</option>
             </select>
             <select
               value={sortMode}

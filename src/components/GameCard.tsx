@@ -56,7 +56,9 @@ export default function GameCard({
           {entry.displayName}
         </div>
         <div className="text-[10px] text-white/60">
-          {formatHours(entry.totalPlaytimeMinutes)}
+          {entry.platforms.every((p) => p.platform === "gog")
+            ? "GOG"
+            : formatHours(entry.totalPlaytimeMinutes)}
         </div>
       </div>
     </button>

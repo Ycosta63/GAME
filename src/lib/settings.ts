@@ -6,6 +6,9 @@ export interface AppSettings {
   steamApiKey?: string;
   steamId?: string;
   psnNpsso?: string;
+  gogAccessToken?: string;
+  gogRefreshToken?: string;
+  gogUserId?: string;
 }
 
 const DATA_DIR = path.join(process.cwd(), "data");
@@ -92,5 +95,6 @@ export function redactSettings(settings: AppSettings) {
     psnNpsso: settings.psnNpsso ? "••••••••" : "",
     hasSteam: Boolean(settings.steamId),
     hasPsn: Boolean(settings.psnNpsso),
+    hasGog: Boolean(settings.gogAccessToken),
   };
 }

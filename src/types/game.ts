@@ -1,4 +1,4 @@
-export type Platform = "steam" | "psn";
+export type Platform = "steam" | "psn" | "gog";
 
 export interface RawGame {
   platform: Platform;

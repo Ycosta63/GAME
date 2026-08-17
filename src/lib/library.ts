@@ -1,6 +1,7 @@
 import { readSettings } from "./settings";
 import { fetchOwnedGames, resolveSteamId } from "./steam";
 import { fetchPsnLibrary } from "./psn";
+import { fetchGogLibrary } from "./gog";
 import { normalizeTitle } from "./match";
 import type {
   LibraryEntry,
@@ -47,6 +48,22 @@ export async function buildLibrary(userId: string): Promise<LibraryResponse> {
     }
   }
 
+  if (settings.gogAccessToken && settings.gogRefreshToken) {
+    try {
+      const games = await fetchGogLibrary(
+        userId,
+        settings.gogAccessToken,
+        settings.gogRefreshToken
+      );
+      allGames.push(...games);
+    } catch (err) {
+      errors.push({
+        platform: "gog",
+        message: err instanceof Error ? err.message : "Erreur GOG inconnue",
+      });
+    }
+  }
+
   const groups = new Map<string, RawGame[]>();
   for (const game of allGames) {
     const key = normalizeTitle(game.name) || game.name.toLowerCase();
@@ -78,6 +95,7 @@ export async function buildLibrary(userId: string): Promise<LibraryResponse> {
   const byPlatform: LibraryStats["byPlatform"] = {
     steam: { games: 0, playtimeMinutes: 0 },
     psn: { games: 0, playtimeMinutes: 0 },
+    gog: { games: 0, playtimeMinutes: 0 },
   };
   let totalTrophies = 0;
   let totalPlatinums = 0;
@@ -107,6 +125,12 @@ export async function buildLibrary(userId: string): Promise<LibraryResponse> {
   return { entries, stats, errors, syncedAt: new Date().toISOString() };
 }
 
+const PLATFORM_LABELS: Record<Platform, string> = {
+  steam: "Steam",
+  psn: "PlayStation",
+  gog: "GOG",
+};
+
 export function platformLabel(platform: Platform): string {
-  return platform === "steam" ? "Steam" : "PlayStation";
+  return PLATFORM_LABELS[platform];
 }

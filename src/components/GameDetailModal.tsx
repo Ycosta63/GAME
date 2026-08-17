@@ -129,7 +129,9 @@ export default function GameDetailModal({
                 )}
               </div>
               <div className="text-shelf-muted text-sm mt-2">
-                {formatHours(entry.totalPlaytimeMinutes)} au total
+                {entry.platforms.every((p) => p.platform === "gog")
+                  ? "Temps de jeu non disponible"
+                  : `${formatHours(entry.totalPlaytimeMinutes)} au total`}
               </div>
             </div>
           </div>
@@ -146,11 +148,13 @@ export default function GameDetailModal({
                   </span>
                 </div>
                 <span className="text-shelf-text text-sm font-medium flex-shrink-0">
-                  {formatHours(p.playtimeMinutes)}
+                  {p.platform === "gog" ? "—" : formatHours(p.playtimeMinutes)}
                 </span>
               </div>
               <div className="text-xs text-shelf-muted">
-                Dernière session : {formatDate(p.lastPlayed)}
+                {p.platform === "gog"
+                  ? "Temps de jeu non disponible via l'API GOG"
+                  : `Dernière session : ${formatDate(p.lastPlayed)}`}
               </div>
 
               {p.platform === "psn" && p.trophies && (
