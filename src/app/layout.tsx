@@ -37,7 +37,7 @@ export default async function RootLayout({
     <html lang="fr" className={`${displayFont.variable} ${bodyFont.variable}`}>
       <body className="font-sans">
         <div className="min-h-screen flex flex-col">
-          <header className="border-b border-shelf-border bg-shelf-card">
+          <header className="border-b border-shelf-border/60">
             <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
               <Link href="/" className="flex items-center gap-2 text-brass">
                 <ShelfieMark className="w-6 h-5" />

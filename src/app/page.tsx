@@ -233,7 +233,7 @@ export default function DashboardPage() {
             </span>
           </div>
 
-          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-7 gap-3">
+          <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-7 lg:grid-cols-9 gap-1">
             {filteredEntries.map((entry) => (
               <GameCard
                 key={entry.key}

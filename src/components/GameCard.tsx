@@ -26,7 +26,7 @@ export default function GameCard({
   return (
     <button
       onClick={onSelect}
-      className="group relative aspect-[2/3] w-full rounded-md overflow-hidden bg-shelf-surface border border-shelf-border text-left outline-none focus-visible:ring-2 focus-visible:ring-brass/70 transition-shadow hover:shadow-lg hover:shadow-black/40"
+      className="group relative aspect-[2/3] w-full rounded-sm overflow-hidden text-left outline-none focus-visible:ring-2 focus-visible:ring-brass/70"
     >
       {src ? (
         <img
@@ -35,27 +35,23 @@ export default function GameCard({
           onError={() =>
             setStage((s) => (s === "cover" && fallbackUrl ? "fallback" : "none"))
           }
-          className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.04]"
+          className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.05]"
         />
       ) : (
         <div
-          className="absolute inset-0 flex items-center justify-center p-3 transition-transform duration-300 group-hover:scale-[1.04]"
+          className="absolute inset-0 transition-transform duration-500 ease-out group-hover:scale-[1.05]"
           style={{ background: placeholderGradient(entry.displayName) }}
-        >
-          <span className="font-display text-shelf-text/80 text-sm text-center leading-snug line-clamp-5">
-            {entry.displayName}
-          </span>
-        </div>
+        />
       )}
 
       {entry.isDuplicate && (
         <span
-          className="absolute top-1.5 right-1.5 w-2.5 h-2.5 rounded-full bg-rust ring-2 ring-shelf-bg"
+          className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-rust"
           title={`Doublon ×${entry.platforms.length}`}
         />
       )}
 
-      <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent px-2 pt-8 pb-1.5">
+      <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 to-transparent px-2 pt-6 pb-1.5 opacity-0 transition-opacity duration-300 ease-out group-hover:opacity-100 group-focus-visible:opacity-100">
         <div className="text-xs font-medium text-white truncate">
           {entry.displayName}
         </div>
