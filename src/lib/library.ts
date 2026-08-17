@@ -1,0 +1,107 @@
+import { readSettings } from "./settings";
+import { fetchOwnedGames, resolveSteamId } from "./steam";
+import { fetchPsnLibrary } from "./psn";
+import { normalizeTitle } from "./match";
+import type {
+  LibraryEntry,
+  LibraryResponse,
+  LibraryStats,
+  Platform,
+  RawGame,
+} from "@/types/game";
+
+export async function buildLibrary(): Promise<LibraryResponse> {
+  const settings = readSettings();
+  const errors: LibraryResponse["errors"] = [];
+  const allGames: RawGame[] = [];
+
+  if (settings.steamApiKey && settings.steamId) {
+    try {
+      const steamId = await resolveSteamId(
+        settings.steamApiKey,
+        settings.steamId
+      );
+      const games = await fetchOwnedGames(settings.steamApiKey, steamId);
+      allGames.push(...games);
+    } catch (err) {
+      errors.push({
+        platform: "steam",
+        message: err instanceof Error ? err.message : "Erreur Steam inconnue",
+      });
+    }
+  }
+
+  if (settings.psnNpsso) {
+    try {
+      const games = await fetchPsnLibrary(settings.psnNpsso);
+      allGames.push(...games);
+    } catch (err) {
+      errors.push({
+        platform: "psn",
+        message: err instanceof Error ? err.message : "Erreur PSN inconnue",
+      });
+    }
+  }
+
+  const groups = new Map<string, RawGame[]>();
+  for (const game of allGames) {
+    const key = normalizeTitle(game.name) || game.name.toLowerCase();
+    const list = groups.get(key) ?? [];
+    list.push(game);
+    groups.set(key, list);
+  }
+
+  const entries: LibraryEntry[] = Array.from(groups.entries())
+    .map(([key, platforms]) => {
+      const totalPlaytimeMinutes = platforms.reduce(
+        (sum, g) => sum + g.playtimeMinutes,
+        0
+      );
+      const displayName = platforms.reduce((longest, g) =>
+        g.name.length > longest.length ? g.name : longest,
+        platforms[0].name
+      );
+      return {
+        key,
+        displayName,
+        totalPlaytimeMinutes,
+        platforms: platforms.sort((a, b) => a.platform.localeCompare(b.platform)),
+        isDuplicate: platforms.length > 1,
+      };
+    })
+    .sort((a, b) => b.totalPlaytimeMinutes - a.totalPlaytimeMinutes);
+
+  const byPlatform: LibraryStats["byPlatform"] = {
+    steam: { games: 0, playtimeMinutes: 0 },
+    psn: { games: 0, playtimeMinutes: 0 },
+  };
+  let totalTrophies = 0;
+  let totalPlatinums = 0;
+  for (const game of allGames) {
+    byPlatform[game.platform].games += 1;
+    byPlatform[game.platform].playtimeMinutes += game.playtimeMinutes;
+    if (game.trophies) {
+      totalTrophies += game.trophies.earned;
+      totalPlatinums += game.trophies.platinum;
+    }
+  }
+
+  const stats: LibraryStats = {
+    totalGames: allGames.length,
+    uniqueGames: entries.length,
+    duplicateGroups: entries.filter((e) => e.isDuplicate).length,
+    totalPlaytimeMinutes: allGames.reduce(
+      (sum, g) => sum + g.playtimeMinutes,
+      0
+    ),
+    byPlatform,
+    totalTrophies,
+    totalPlatinums,
+  };
+
+  return { entries, stats, errors };
+}
+
+export function platformLabel(platform: Platform): string {
+  return platform === "steam" ? "Steam" : "PlayStation";
+}
