@@ -57,22 +57,24 @@ export default function SettingsPage() {
   return (
     <div className="space-y-8 max-w-2xl">
       <div>
-        <h1 className="text-2xl font-semibold">Réglages</h1>
-        <p className="text-white/50 text-sm mt-1">
+        <h1 className="font-display text-2xl font-semibold text-shelf-text">
+          Réglages
+        </h1>
+        <p className="text-shelf-muted text-sm mt-1">
           Connecte tes comptes pour récupérer ta bibliothèque. Les clés sont
-          stockées uniquement sur ce serveur.
+          stockées uniquement sur ce serveur, rattachées à ton compte.
         </p>
       </div>
 
       <form onSubmit={save} className="space-y-6">
-        <section className="bg-[#14161b] border border-white/10 rounded-xl p-4 space-y-3">
+        <section className="bg-shelf-card border border-shelf-border rounded-xl p-4 space-y-3">
           <div className="flex items-center justify-between">
-            <h2 className="font-medium">Steam</h2>
+            <h2 className="font-semibold text-shelf-text">Steam</h2>
             {settings?.hasSteam && (
-              <span className="text-xs text-emerald-400">Connecté</span>
+              <span className="text-xs text-sage">Connecté</span>
             )}
           </div>
-          <p className="text-xs text-white/50">
+          <p className="text-xs text-shelf-muted">
             1. Crée une clé API sur{" "}
             <span className="underline">steamcommunity.com/dev/apikey</span>.
             <br />
@@ -89,7 +91,7 @@ export default function SettingsPage() {
             }
             value={steamApiKey}
             onChange={(e) => setSteamApiKey(e.target.value)}
-            className="w-full bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-sm outline-none focus:border-white/30"
+            className="w-full bg-shelf-surface border border-shelf-border rounded-lg px-3 py-2 text-sm text-shelf-text outline-none focus:border-brass/50"
           />
           <input
             type="text"
@@ -100,27 +102,27 @@ export default function SettingsPage() {
             }
             value={steamId}
             onChange={(e) => setSteamId(e.target.value)}
-            className="w-full bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-sm outline-none focus:border-white/30"
+            className="w-full bg-shelf-surface border border-shelf-border rounded-lg px-3 py-2 text-sm text-shelf-text outline-none focus:border-brass/50"
           />
           {settings?.hasSteam && (
             <button
               type="button"
               onClick={() => disconnect("steam")}
-              className="text-xs text-red-400 hover:text-red-300 underline"
+              className="text-xs text-rust hover:text-rust/80 underline"
             >
               Déconnecter Steam
             </button>
           )}
         </section>
 
-        <section className="bg-[#14161b] border border-white/10 rounded-xl p-4 space-y-3">
+        <section className="bg-shelf-card border border-shelf-border rounded-xl p-4 space-y-3">
           <div className="flex items-center justify-between">
-            <h2 className="font-medium">PlayStation</h2>
+            <h2 className="font-semibold text-shelf-text">PlayStation</h2>
             {settings?.hasPsn && (
-              <span className="text-xs text-emerald-400">Connecté</span>
+              <span className="text-xs text-sage">Connecté</span>
             )}
           </div>
-          <p className="text-xs text-white/50">
+          <p className="text-xs text-shelf-muted">
             1. Connecte-toi sur{" "}
             <span className="underline">my.playstation.com</span>.<br />
             2. Va sur{" "}
@@ -128,7 +130,8 @@ export default function SettingsPage() {
               ca.account.sony.com/api/v1/ssocookie
             </span>{" "}
             (toujours connecté) et copie la valeur du champ{" "}
-            <code className="bg-black/30 px-1 rounded">npsso</code>.<br />
+            <code className="bg-shelf-surface px-1 rounded">npsso</code>.
+            <br />
             3. Colle-la ci-dessous (ce jeton expire après environ 2 mois).
           </p>
           <input
@@ -138,13 +141,13 @@ export default function SettingsPage() {
             }
             value={psnNpsso}
             onChange={(e) => setPsnNpsso(e.target.value)}
-            className="w-full bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-sm outline-none focus:border-white/30"
+            className="w-full bg-shelf-surface border border-shelf-border rounded-lg px-3 py-2 text-sm text-shelf-text outline-none focus:border-brass/50"
           />
           {settings?.hasPsn && (
             <button
               type="button"
               onClick={() => disconnect("psn")}
-              className="text-xs text-red-400 hover:text-red-300 underline"
+              className="text-xs text-rust hover:text-rust/80 underline"
             >
               Déconnecter PlayStation
             </button>
@@ -155,11 +158,11 @@ export default function SettingsPage() {
           <button
             type="submit"
             disabled={saving}
-            className="bg-white text-black text-sm font-medium px-4 py-2 rounded-lg hover:bg-white/90 transition-colors disabled:opacity-50"
+            className="bg-brass text-brass-ink text-sm font-semibold px-4 py-2 rounded-lg hover:bg-brass-hover transition-colors disabled:opacity-50"
           >
             {saving ? "Enregistrement…" : "Enregistrer"}
           </button>
-          {status && <span className="text-sm text-white/60">{status}</span>}
+          {status && <span className="text-sm text-shelf-muted">{status}</span>}
         </div>
       </form>
     </div>

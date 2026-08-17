@@ -17,7 +17,7 @@ function TrophyLine({
   bronze: number;
 }) {
   return (
-    <div className="flex items-center gap-2 text-xs text-white/70">
+    <div className="flex items-center gap-2 text-xs text-shelf-muted">
       {platinum > 0 && <span title="Platine">🏆 {platinum}</span>}
       {gold > 0 && <span title="Or">🥇 {gold}</span>}
       {silver > 0 && <span title="Argent">🥈 {silver}</span>}
@@ -48,8 +48,8 @@ export default function GameRow({ entry }: { entry: LibraryEntry }) {
 
   return (
     <div
-      className={`bg-[#14161b] border rounded-xl p-3 transition-colors ${
-        entry.isDuplicate ? "border-amber-500/40" : "border-white/10"
+      className={`bg-shelf-card border rounded-xl p-3 transition-colors ${
+        entry.isDuplicate ? "border-rust/50" : "border-shelf-border"
       }`}
     >
       <button
@@ -61,19 +61,21 @@ export default function GameRow({ entry }: { entry: LibraryEntry }) {
             src={primaryIcon}
             alt=""
             onError={() => setIconFailed(true)}
-            className="w-10 h-10 rounded object-cover bg-black/30 flex-shrink-0"
+            className="w-10 h-10 rounded object-cover bg-shelf-surface flex-shrink-0"
           />
         ) : (
-          <div className="w-10 h-10 rounded bg-black/30 flex-shrink-0 flex items-center justify-center text-white/30">
+          <div className="w-10 h-10 rounded bg-shelf-surface flex-shrink-0 flex items-center justify-center text-shelf-muted">
             ?
           </div>
         )}
 
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="font-medium truncate">{entry.displayName}</span>
+            <span className="font-medium truncate text-shelf-text">
+              {entry.displayName}
+            </span>
             {entry.isDuplicate && (
-              <span className="text-[10px] uppercase tracking-wide text-amber-400 border border-amber-500/40 rounded-full px-2 py-0.5">
+              <span className="text-[10px] uppercase tracking-wide text-rust border border-rust/40 rounded-full px-2 py-0.5">
                 Doublon ×{entry.platforms.length}
               </span>
             )}
@@ -86,15 +88,15 @@ export default function GameRow({ entry }: { entry: LibraryEntry }) {
         </div>
 
         <div className="text-right flex-shrink-0">
-          <div className="font-medium">
+          <div className="font-medium text-shelf-text">
             {formatHours(entry.totalPlaytimeMinutes)}
           </div>
-          <div className="text-white/40 text-xs">{expanded ? "▲" : "▼"}</div>
+          <div className="text-shelf-muted text-xs">{expanded ? "▲" : "▼"}</div>
         </div>
       </button>
 
       {expanded && (
-        <div className="mt-3 pt-3 border-t border-white/10 space-y-2">
+        <div className="mt-3 pt-3 border-t border-shelf-border space-y-2">
           {entry.platforms.map((p) => (
             <div
               key={`${p.platform}-${p.id}`}
@@ -102,14 +104,14 @@ export default function GameRow({ entry }: { entry: LibraryEntry }) {
             >
               <div className="flex items-center gap-2">
                 <PlatformBadge platform={p.platform} />
-                <span className="text-white/60 text-xs">{p.name}</span>
+                <span className="text-shelf-muted text-xs">{p.name}</span>
               </div>
 
-              <div className="flex items-center gap-3 text-xs text-white/70">
-                <span>{formatHours(p.playtimeMinutes)}</span>
-                <span className="text-white/40">
-                  Dernière session : {formatDate(p.lastPlayed)}
+              <div className="flex items-center gap-3 text-xs text-shelf-muted">
+                <span className="text-shelf-text">
+                  {formatHours(p.playtimeMinutes)}
                 </span>
+                <span>Dernière session : {formatDate(p.lastPlayed)}</span>
 
                 {p.platform === "psn" && p.trophies && (
                   <TrophyLine {...p.trophies} />
@@ -118,15 +120,15 @@ export default function GameRow({ entry }: { entry: LibraryEntry }) {
                 {p.platform === "steam" &&
                   (achievements[p.id] === undefined ? (
                     <button
-                      className="underline text-white/50 hover:text-white"
+                      className="underline text-shelf-muted hover:text-brass"
                       onClick={() => loadAchievements(p.id)}
                     >
                       Voir les succès
                     </button>
                   ) : achievements[p.id] === "loading" ? (
-                    <span className="text-white/40">Chargement…</span>
+                    <span>Chargement…</span>
                   ) : achievements[p.id] === null ? (
-                    <span className="text-white/40">Pas de succès</span>
+                    <span>Pas de succès</span>
                   ) : (
                     <span>
                       🏅 {(achievements[p.id] as AchievementSummary).unlocked}/

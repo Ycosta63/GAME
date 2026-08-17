@@ -1,4 +1,4 @@
-# Game Library Hub
+# Shelfie
 
 Une app web qui regroupe ta bibliothèque **Steam** et **PlayStation** au
 même endroit : tous tes jeux, sur quel launcher, les doublons entre

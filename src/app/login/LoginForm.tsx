@@ -2,6 +2,7 @@
 
 import { signIn } from "next-auth/react";
 import { useSearchParams } from "next/navigation";
+import ShelfieMark from "@/components/ShelfieMark";
 
 function GoogleIcon() {
   return (
@@ -32,22 +33,29 @@ export default function LoginForm() {
 
   return (
     <div className="min-h-[70vh] flex items-center justify-center">
-      <div className="bg-[#14161b] border border-white/10 rounded-xl p-6 w-full max-w-sm space-y-5 text-center">
-        <div>
-          <h1 className="text-xl font-semibold">🎮 Game Library Hub</h1>
-          <p className="text-white/50 text-sm mt-1">
-            Connecte-toi pour accéder à ta bibliothèque et relier tes comptes
-            Steam et PlayStation.
-          </p>
+      <div className="bg-shelf-card border border-shelf-border rounded-2xl p-8 w-full max-w-sm space-y-6 text-center">
+        <div className="flex flex-col items-center gap-3">
+          <div className="text-brass">
+            <ShelfieMark className="w-10 h-8" />
+          </div>
+          <div>
+            <h1 className="font-display text-2xl font-semibold text-shelf-text">
+              Shelfie
+            </h1>
+            <p className="text-shelf-muted text-sm mt-1">
+              Connecte-toi pour accéder à ta bibliothèque et relier tes
+              comptes Steam et PlayStation.
+            </p>
+          </div>
         </div>
         <button
           onClick={() => signIn("google", { callbackUrl: next })}
-          className="w-full flex items-center justify-center gap-2 bg-white text-black text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-white/90 transition-colors"
+          className="w-full flex items-center justify-center gap-2 bg-shelf-text text-shelf-bg text-sm font-semibold px-4 py-2.5 rounded-lg hover:opacity-90 transition-opacity"
         >
           <GoogleIcon />
           Continuer avec Google
         </button>
-        <p className="text-white/30 text-xs">
+        <p className="text-shelf-muted/70 text-xs">
           Ta bibliothèque est privée : personne d&apos;autre ne peut la voir.
         </p>
       </div>

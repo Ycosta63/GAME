@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import StatsBar from "@/components/StatsBar";
 import GameRow from "@/components/GameRow";
+import ShelfieMark from "@/components/ShelfieMark";
 import type { LibraryEntry, LibraryResponse, Platform } from "@/types/game";
 
 const PLATFORM_LABELS: Record<Platform, string> = {
@@ -96,8 +97,10 @@ export default function DashboardPage() {
     <div className="space-y-6">
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-2xl font-semibold">Ta bibliothèque</h1>
-          <p className="text-white/50 text-sm mt-1">
+          <h1 className="font-display text-2xl font-semibold text-shelf-text">
+            Ta bibliothèque
+          </h1>
+          <p className="text-shelf-muted text-sm mt-1">
             Tous tes jeux Steam et PlayStation, réunis au même endroit.
           </p>
         </div>
@@ -106,11 +109,11 @@ export default function DashboardPage() {
             <button
               onClick={() => load(true)}
               disabled={refreshing}
-              className="bg-[#14161b] border border-white/10 hover:border-white/30 text-sm px-3 py-2 rounded-lg transition-colors disabled:opacity-50"
+              className="bg-shelf-card border border-shelf-border hover:border-brass/50 text-shelf-text text-sm px-3 py-2 rounded-lg transition-colors disabled:opacity-50"
             >
               {refreshing ? "Actualisation…" : "↻ Actualiser"}
             </button>
-            <div className="text-white/30 text-xs mt-1">
+            <div className="text-shelf-muted/70 text-xs mt-1">
               Synchronisé à{" "}
               {new Date(data.syncedAt).toLocaleTimeString("fr-FR")}
             </div>
@@ -118,15 +121,15 @@ export default function DashboardPage() {
         )}
       </div>
 
-      {loading && <div className="text-white/50">Chargement…</div>}
+      {loading && <div className="text-shelf-muted">Chargement…</div>}
       {error && (
-        <div className="bg-red-500/10 border border-red-500/30 text-red-300 rounded-lg px-4 py-3 text-sm">
+        <div className="bg-rust/10 border border-rust/30 text-rust rounded-lg px-4 py-3 text-sm">
           {error}
         </div>
       )}
 
       {data && data.errors.length > 0 && (
-        <div className="bg-amber-500/10 border border-amber-500/30 text-amber-300 rounded-lg px-4 py-3 text-sm space-y-1">
+        <div className="bg-rust/10 border border-rust/30 text-rust rounded-lg px-4 py-3 text-sm space-y-1">
           {data.errors.map((e) => (
             <div key={e.platform}>
               <strong>{PLATFORM_LABELS[e.platform]}</strong> : {e.message}
@@ -136,13 +139,16 @@ export default function DashboardPage() {
       )}
 
       {notConfigured && (
-        <div className="bg-[#14161b] border border-white/10 rounded-xl px-6 py-8 text-center space-y-3">
-          <p className="text-white/70">
+        <div className="bg-shelf-card border border-shelf-border rounded-xl px-6 py-10 text-center space-y-4">
+          <div className="text-brass/60 flex justify-center">
+            <ShelfieMark className="w-14 h-11" />
+          </div>
+          <p className="text-shelf-muted">
             Aucun compte connecté pour l&apos;instant.
           </p>
           <Link
             href="/settings"
-            className="inline-block bg-white text-black text-sm font-medium px-4 py-2 rounded-lg hover:bg-white/90 transition-colors"
+            className="inline-block bg-brass text-brass-ink text-sm font-semibold px-4 py-2 rounded-lg hover:bg-brass-hover transition-colors"
           >
             Connecter Steam / PlayStation
           </Link>
@@ -159,14 +165,14 @@ export default function DashboardPage() {
               placeholder="Rechercher un jeu…"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="bg-[#14161b] border border-white/10 rounded-lg px-3 py-2 text-sm flex-1 min-w-[200px] outline-none focus:border-white/30"
+              className="bg-shelf-card border border-shelf-border rounded-lg px-3 py-2 text-sm text-shelf-text flex-1 min-w-[200px] outline-none focus:border-brass/50"
             />
             <select
               value={platformFilter}
               onChange={(e) =>
                 setPlatformFilter(e.target.value as Platform | "all")
               }
-              className="bg-[#14161b] border border-white/10 rounded-lg px-3 py-2 text-sm outline-none focus:border-white/30"
+              className="bg-shelf-card border border-shelf-border rounded-lg px-3 py-2 text-sm text-shelf-text outline-none focus:border-brass/50"
             >
               <option value="all">Tous les launchers</option>
               <option value="steam">Steam</option>
@@ -175,13 +181,13 @@ export default function DashboardPage() {
             <select
               value={sortMode}
               onChange={(e) => setSortMode(e.target.value as SortMode)}
-              className="bg-[#14161b] border border-white/10 rounded-lg px-3 py-2 text-sm outline-none focus:border-white/30"
+              className="bg-shelf-card border border-shelf-border rounded-lg px-3 py-2 text-sm text-shelf-text outline-none focus:border-brass/50"
             >
               <option value="playtime">Trier par temps de jeu</option>
               <option value="name">Trier par nom</option>
               <option value="lastPlayed">Trier par dernière session</option>
             </select>
-            <label className="flex items-center gap-2 text-sm text-white/70 select-none">
+            <label className="flex items-center gap-2 text-sm text-shelf-muted select-none">
               <input
                 type="checkbox"
                 checked={duplicatesOnly}
@@ -189,7 +195,7 @@ export default function DashboardPage() {
               />
               Doublons uniquement
             </label>
-            <label className="flex items-center gap-2 text-sm text-white/70 select-none">
+            <label className="flex items-center gap-2 text-sm text-shelf-muted select-none">
               <input
                 type="checkbox"
                 checked={hideNeverPlayed}
@@ -197,7 +203,7 @@ export default function DashboardPage() {
               />
               Masquer les jeux jamais joués
             </label>
-            <span className="text-white/40 text-xs ml-auto">
+            <span className="text-shelf-muted/70 text-xs ml-auto">
               {filteredEntries.length} jeu(x) affiché(s)
             </span>
           </div>
@@ -207,7 +213,7 @@ export default function DashboardPage() {
               <GameRow key={entry.key} entry={entry} />
             ))}
             {filteredEntries.length === 0 && (
-              <div className="text-white/40 text-sm text-center py-8">
+              <div className="text-shelf-muted text-sm text-center py-8">
                 Aucun jeu ne correspond à ces filtres.
               </div>
             )}
