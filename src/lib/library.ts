@@ -11,7 +11,7 @@ import type {
 } from "@/types/game";
 
 export async function buildLibrary(): Promise<LibraryResponse> {
-  const settings = readSettings();
+  const settings = await readSettings();
   const errors: LibraryResponse["errors"] = [];
   const allGames: RawGame[] = [];
 

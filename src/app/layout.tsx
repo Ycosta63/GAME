@@ -22,7 +22,7 @@ export default function RootLayout({
               <Link href="/" className="font-semibold text-lg tracking-tight">
                 🎮 Game Library Hub
               </Link>
-              <nav className="flex gap-4 text-sm">
+              <nav className="flex items-center gap-4 text-sm">
                 <Link
                   href="/"
                   className="text-white/70 hover:text-white transition-colors"
@@ -35,6 +35,16 @@ export default function RootLayout({
                 >
                   Réglages
                 </Link>
+                {process.env.APP_PASSWORD && (
+                  <form action="/api/logout" method="post">
+                    <button
+                      type="submit"
+                      className="text-white/70 hover:text-white transition-colors"
+                    >
+                      Déconnexion
+                    </button>
+                  </form>
+                )}
               </nav>
             </div>
           </header>

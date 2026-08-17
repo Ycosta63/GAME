@@ -6,7 +6,7 @@ export async function GET(
   _req: Request,
   { params }: { params: { appid: string } }
 ) {
-  const settings = readSettings();
+  const settings = await readSettings();
   if (!settings.steamApiKey || !settings.steamId) {
     return NextResponse.json(
       { error: "Steam non configuré" },

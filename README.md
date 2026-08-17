@@ -19,10 +19,13 @@ peuvent casser à tout moment. Le code est structuré (`src/lib/`, type
 ## Stack
 
 - Next.js 14 (App Router) + TypeScript + Tailwind
-- Aucune base de données : les identifiants sont stockés dans
-  `data/settings.json` (ignoré par git), les données de bibliothèque sont
-  récupérées à la demande auprès des API et mises en cache en mémoire
-  quelques minutes.
+- Stockage des identifiants : `data/settings.json` en local (zéro config),
+  ou une base **Upstash Redis** gratuite quand elle est configurée (requis
+  sur un hébergeur serverless comme Vercel — voir la section Héberger).
+  Les données de bibliothèque sont récupérées à la demande auprès des API
+  et mises en cache en mémoire quelques minutes.
+- Le site entier peut être protégé par un mot de passe (variable
+  `APP_PASSWORD`) — recommandé dès que l'app est accessible publiquement.
 
 ## Démarrer
 
@@ -71,6 +74,63 @@ l'étape ci-dessus.
 - Bouton « Actualiser » pour forcer une resynchronisation immédiate
   (bypass du cache de 5 min), avec horodatage de la dernière synchro
 
+## Héberger le site (gratuitement, en sécurisé)
+
+Recommandé : **Vercel**, l'hébergeur officiel de Next.js — gratuit, HTTPS
+automatique, aucun serveur à gérer/patcher, aucune carte bancaire requise.
+
+### 1. Pousser le code sur GitHub
+
+Le code est déjà sur GitHub si tu es parti de ce dépôt. Sinon : crée un
+dépôt sur https://github.com/new et pousse ce projet dedans.
+
+### 2. Créer une base Upstash Redis gratuite (pour que tes identifiants persistent)
+
+Sur Vercel, le disque des fonctions serverless n'est pas persistant : le
+fichier `data/settings.json` ne survivrait pas. Il faut donc une petite
+base gratuite pour stocker tes identifiants Steam/PSN.
+
+1. Va sur https://console.upstash.com (compte gratuit, pas de carte
+   bancaire), crée une base **Redis** (région au choix, plan gratuit).
+2. Dans l'onglet **REST API** de la base, copie `UPSTASH_REDIS_REST_URL`
+   et `UPSTASH_REDIS_REST_TOKEN`.
+
+### 3. Déployer sur Vercel
+
+1. Va sur https://vercel.com/new, connecte ton compte GitHub, importe le
+   dépôt. Vercel détecte Next.js automatiquement — aucune configuration
+   de build à changer.
+2. Avant de cliquer sur *Deploy*, ouvre **Environment Variables** et
+   ajoute :
+   - `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN` (étape 2)
+   - `APP_PASSWORD` : le mot de passe qui protégera tout le site (choisis-en
+     un fort — c'est ce qui empêche n'importe qui avec l'URL de voir ta
+     bibliothèque ou de reconfigurer tes comptes)
+   - `AUTH_SECRET` : une deuxième chaîne aléatoire quelconque (sert à
+     signer le cookie de session ; sans elle `APP_PASSWORD` est réutilisé,
+     ce qui fonctionne mais est un peu moins robuste)
+3. Clique sur **Deploy**. Après quelques dizaines de secondes, l'app est
+   en ligne sur une URL `https://....vercel.app`.
+4. Ouvre l'URL, entre ton `APP_PASSWORD`, puis va dans **Réglages** pour
+   connecter Steam et PlayStation comme en local.
+
+Tout redéploiement futur (nouveau `git push`) réutilise la même base
+Upstash : tes identifiants ne sont pas perdus.
+
+### Alternative sans base de données : Render.com
+
+Si tu préfères ne pas créer de compte Upstash, **Render.com** (gratuit,
+sans carte bancaire) fait tourner un vrai serveur avec un disque qui
+persiste tant que le service ne redémarre pas — `data/settings.json`
+fonctionne alors sans aucun changement de code. Pense quand même à définir
+`APP_PASSWORD` (et `AUTH_SECRET`) dans les variables d'environnement du
+service pour garder le site protégé.
+
+Limites du plan gratuit Render : le service se met en veille après 15 min
+d'inactivité (le premier accès prend 30-60s pour le réveiller), et un
+redéploiement remet le disque à zéro — il faudra alors ressaisir tes
+identifiants Steam/PSN dans Réglages.
+
 ## Limites connues
 
 - Epic Games, EA (Origin/EA App) et Battle.net ne sont pas supportés (pas
@@ -83,3 +143,7 @@ l'étape ci-dessus.
   Optimizer/Server Actions, le risque réel est faible pour un usage
   personnel auto-hébergé ; envisager la migration si l'app est un jour
   exposée publiquement.
+- La protection par mot de passe (`APP_PASSWORD`) n'a pas de limitation de
+  tentatives (pas de rate limiting) : suffisant contre un visiteur au
+  hasard, pas contre quelqu'un qui bruteforce activement. Choisis un mot
+  de passe long plutôt qu'un mot du dictionnaire.

@@ -10,7 +10,7 @@ import { invalidate } from "@/lib/cache";
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  const settings = readSettings();
+  const settings = await readSettings();
   return NextResponse.json(redactSettings(settings));
 }
 
@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
     patch.psnNpsso = body.psnNpsso.trim();
   }
 
-  const next = mergeSettings(patch);
+  const next = await mergeSettings(patch);
   invalidate("steam:");
   invalidate("psn:");
 
@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
 export async function DELETE(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const field = searchParams.get("field");
-  const current = readSettings();
+  const current = await readSettings();
 
   if (field === "steam") {
     delete current.steamApiKey;
@@ -47,7 +47,7 @@ export async function DELETE(req: NextRequest) {
     delete current.psnNpsso;
   }
 
-  writeSettings(current);
+  await writeSettings(current);
   invalidate("steam:");
   invalidate("psn:");
 
