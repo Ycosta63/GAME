@@ -15,7 +15,7 @@ function Stat({
 
   return (
     <div className="flex flex-col">
-      <span className={`font-display text-xl font-semibold ${toneClass}`}>
+      <span className={`text-xl font-bold tracking-tight ${toneClass}`}>
         {value}
       </span>
       <span className="text-[11px] uppercase tracking-wide text-shelf-muted">

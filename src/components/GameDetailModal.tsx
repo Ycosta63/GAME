@@ -108,14 +108,14 @@ export default function GameDetailModal({
                   className="w-full h-full flex items-center justify-center p-2"
                   style={{ background: placeholderGradient(entry.displayName) }}
                 >
-                  <span className="font-display text-shelf-text/80 text-xs text-center leading-snug line-clamp-5">
+                  <span className="font-semibold text-shelf-text/80 text-xs text-center leading-snug line-clamp-5">
                     {entry.displayName}
                   </span>
                 </div>
               )}
             </div>
             <div className="min-w-0 pt-1">
-              <h2 className="font-display text-xl font-semibold text-shelf-text text-balance">
+              <h2 className="text-xl font-bold tracking-tight text-shelf-text text-balance">
                 {entry.displayName}
               </h2>
               <div className="flex items-center gap-2 mt-2 flex-wrap">
