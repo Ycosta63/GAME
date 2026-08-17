@@ -7,7 +7,11 @@ export const config = {
 
 export async function middleware(req: NextRequest) {
   // Google sign-in not configured (e.g. local dev): app stays open.
-  if (!process.env.GOOGLE_CLIENT_ID) {
+  // Must mirror authOptions.ts's `authEnabled` check exactly — if only one
+  // of the two env vars were set, this would otherwise leave the entire
+  // site open with no login wall while the rest of the app still thinks
+  // auth is disabled and serves the shared "local" account to everyone.
+  if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
     return NextResponse.next();
   }
 
