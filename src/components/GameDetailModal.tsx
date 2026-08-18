@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import type { AchievementDetails, LibraryEntry } from "@/types/game";
 import PlatformBadge from "./PlatformBadge";
 import { formatDate, formatHours } from "@/lib/format";
@@ -97,11 +98,12 @@ export default function GameDetailModal({
         <div className="relative overflow-hidden rounded-t-xl">
           <div className="absolute inset-0">
             {cover ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
+              <Image
                 src={cover}
                 alt=""
-                className="w-full h-full object-cover scale-110 blur-2xl opacity-40"
+                fill
+                unoptimized
+                className="object-cover scale-110 blur-2xl opacity-40"
               />
             ) : (
               <div
@@ -113,10 +115,9 @@ export default function GameDetailModal({
           </div>
 
           <div className="relative flex gap-4 p-5">
-            <div className="w-28 flex-shrink-0 aspect-[2/3] rounded-md overflow-hidden shadow-lg shadow-black/50 bg-shelf-surface">
+            <div className="relative w-28 flex-shrink-0 aspect-[2/3] rounded-md overflow-hidden shadow-lg shadow-black/50 bg-shelf-surface">
               {cover ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={cover} alt="" className="w-full h-full object-cover" />
+                <Image src={cover} alt="" fill unoptimized className="object-cover" />
               ) : (
                 <div
                   className="w-full h-full flex items-center justify-center p-2"

@@ -7,6 +7,7 @@ import GameCard from "@/components/GameCard";
 import GameDetailModal from "@/components/GameDetailModal";
 import ShelfieMark from "@/components/ShelfieMark";
 import LibrarySkeleton from "@/components/LibrarySkeleton";
+import { fuzzyMatch } from "@/lib/fuzzy";
 import type { LibraryEntry, LibraryResponse, Platform } from "@/types/game";
 
 const PLATFORM_LABELS: Record<Platform, string> = {
@@ -125,10 +126,7 @@ export default function DashboardPage() {
   const filteredEntries = useMemo(() => {
     if (!data) return [];
     const filtered = data.entries.filter((entry) => {
-      if (
-        search.trim() &&
-        !entry.displayName.toLowerCase().includes(search.trim().toLowerCase())
-      ) {
+      if (search.trim() && !fuzzyMatch(entry.displayName, search)) {
         return false;
       }
       if (

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import type { LibraryEntry } from "@/types/game";
 import { formatHours } from "@/lib/format";
 import { placeholderGradient } from "@/lib/placeholder";
@@ -19,6 +20,11 @@ export default function GameCard({
 }) {
   const [stage, setStage] = useState<"cover" | "fallback" | "none">("cover");
 
+  // unoptimized: Vercel's free tier caps server-side image optimization at
+  // 1,000 transforms/month account-wide, which a library grid would blow
+  // through fast. next/image still buys lazy-loading + no layout shift
+  // over a plain <img>, just skips the (paid-beyond-free-tier) resizing.
+
   const coverUrl = entry.platforms.find((p) => p.coverUrl)?.coverUrl;
   const fallbackUrl = steamFallbackUrl(entry);
   const src = stage === "cover" ? coverUrl : stage === "fallback" ? fallbackUrl : undefined;
@@ -29,13 +35,16 @@ export default function GameCard({
       className="group relative aspect-[2/3] w-full rounded-sm overflow-hidden text-left outline-none focus-visible:ring-2 focus-visible:ring-brass/70"
     >
       {src ? (
-        <img
+        <Image
           src={src}
           alt=""
+          fill
+          sizes="(min-width: 1024px) 11vw, (min-width: 640px) 18vw, 24vw"
+          unoptimized
           onError={() =>
             setStage((s) => (s === "cover" && fallbackUrl ? "fallback" : "none"))
           }
-          className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.05]"
+          className="object-cover transition-transform duration-500 ease-out group-hover:scale-[1.05]"
         />
       ) : (
         <div
