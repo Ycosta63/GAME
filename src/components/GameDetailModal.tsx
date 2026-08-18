@@ -188,13 +188,17 @@ export default function GameDetailModal({
                     Pas de succès
                   </span>
                 ) : "error" in (achievements[p.id] as object) ? (
-                  <button
-                    className="text-xs underline text-rust hover:text-rust/80 transition-colors"
-                    onClick={() => loadAchievements(p.id)}
-                    title={(achievements[p.id] as { error: string }).error}
-                  >
-                    Erreur — réessayer
-                  </button>
+                  <div className="text-xs space-y-0.5">
+                    <p className="text-rust break-words">
+                      {(achievements[p.id] as { error: string }).error}
+                    </p>
+                    <button
+                      className="underline text-shelf-muted hover:text-brass transition-colors"
+                      onClick={() => loadAchievements(p.id)}
+                    >
+                      Réessayer
+                    </button>
+                  </div>
                 ) : (
                   <span className="text-xs text-shelf-muted">
                     🏅 {(achievements[p.id] as AchievementSummary).unlocked}/
