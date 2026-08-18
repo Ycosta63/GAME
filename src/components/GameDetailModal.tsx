@@ -2,22 +2,18 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
-import type {
-  AchievementDetails,
-  GameData,
-  GameStatus,
-  LibraryEntry,
+import {
+  GAME_STATUS_LABELS,
+  type AchievementDetails,
+  type GameData,
+  type GameStatus,
+  type LibraryEntry,
 } from "@/types/game";
 import PlatformBadge from "./PlatformBadge";
 import { formatDate, formatHours } from "@/lib/format";
 import { placeholderGradient } from "@/lib/placeholder";
 
-const STATUS_OPTIONS: { value: GameStatus; label: string }[] = [
-  { value: "backlog", label: "À jouer" },
-  { value: "playing", label: "En cours" },
-  { value: "completed", label: "Terminé" },
-  { value: "abandoned", label: "Abandonné" },
-];
+const STATUS_OPTIONS = Object.entries(GAME_STATUS_LABELS) as [GameStatus, string][];
 
 function StatusPicker({
   status,
@@ -28,17 +24,17 @@ function StatusPicker({
 }) {
   return (
     <div className="flex flex-wrap gap-1.5">
-      {STATUS_OPTIONS.map((opt) => (
+      {STATUS_OPTIONS.map(([value, label]) => (
         <button
-          key={opt.value}
-          onClick={() => onChange(opt.value)}
+          key={value}
+          onClick={() => onChange(value)}
           className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${
-            status === opt.value
+            status === value
               ? "bg-brass/15 text-brass border-brass/40"
               : "bg-transparent text-shelf-muted border-shelf-border hover:text-shelf-text"
           }`}
         >
-          {opt.label}
+          {label}
         </button>
       ))}
     </div>
@@ -61,7 +57,7 @@ function RatingPicker({
           className={`text-lg leading-none transition-colors ${
             rating && n <= rating
               ? "text-brass"
-              : "text-shelf-border hover:text-brass/50"
+              : "text-shelf-muted/50 hover:text-brass/60"
           }`}
           aria-label={`${n} étoile${n > 1 ? "s" : ""}`}
         >

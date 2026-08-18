@@ -64,6 +64,13 @@ export interface LibraryStats {
 
 export type GameStatus = "backlog" | "playing" | "completed" | "abandoned";
 
+export const GAME_STATUS_LABELS: Record<GameStatus, string> = {
+  backlog: "À jouer",
+  playing: "En cours",
+  completed: "Terminé",
+  abandoned: "Abandonné",
+};
+
 export interface GameData {
   status?: GameStatus;
   rating?: number;

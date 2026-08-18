@@ -5,6 +5,7 @@ import Link from "next/link";
 import StatsBar from "@/components/StatsBar";
 import GameCard from "@/components/GameCard";
 import GameDetailModal from "@/components/GameDetailModal";
+import FilterMenu from "@/components/FilterMenu";
 import ShelfieMark from "@/components/ShelfieMark";
 import LibrarySkeleton from "@/components/LibrarySkeleton";
 import { fuzzyMatch } from "@/lib/fuzzy";
@@ -20,13 +21,6 @@ const PLATFORM_LABELS: Record<Platform, string> = {
   steam: "Steam",
   psn: "PlayStation",
   gog: "GOG",
-};
-
-const STATUS_LABELS: Record<GameStatus, string> = {
-  backlog: "À jouer",
-  playing: "En cours",
-  completed: "Terminé",
-  abandoned: "Abandonné",
 };
 
 type SortMode = "playtime" | "name" | "lastPlayed";
@@ -306,19 +300,6 @@ export default function DashboardPage() {
               <option value="gog">GOG</option>
             </select>
             <select
-              value={statusFilter}
-              onChange={(e) =>
-                setStatusFilter(e.target.value as GameStatus | "all")
-              }
-              className="bg-transparent border border-shelf-border rounded-full px-3 py-2 text-sm text-shelf-muted outline-none focus:border-brass/50 hover:text-shelf-text cursor-pointer transition-colors"
-            >
-              <option value="all">Tous les statuts</option>
-              <option value="backlog">{STATUS_LABELS.backlog}</option>
-              <option value="playing">{STATUS_LABELS.playing}</option>
-              <option value="completed">{STATUS_LABELS.completed}</option>
-              <option value="abandoned">{STATUS_LABELS.abandoned}</option>
-            </select>
-            <select
               value={sortMode}
               onChange={(e) => setSortMode(e.target.value as SortMode)}
               className="bg-transparent border border-shelf-border rounded-full px-3 py-2 text-sm text-shelf-muted outline-none focus:border-brass/50 hover:text-shelf-text cursor-pointer transition-colors"
@@ -328,37 +309,17 @@ export default function DashboardPage() {
               <option value="lastPlayed">Trier : dernière session</option>
             </select>
 
-            <button
-              onClick={() => setDuplicatesOnly((v) => !v)}
-              className={`text-sm px-3 py-2 rounded-full border transition-colors ${
-                duplicatesOnly
-                  ? "bg-brass/15 text-brass border-brass/40"
-                  : "bg-transparent text-shelf-muted border-shelf-border hover:text-shelf-text"
-              }`}
-            >
-              Doublons uniquement
-            </button>
-            <button
-              onClick={() => setHideNeverPlayed((v) => !v)}
-              className={`text-sm px-3 py-2 rounded-full border transition-colors ${
-                hideNeverPlayed
-                  ? "bg-brass/15 text-brass border-brass/40"
-                  : "bg-transparent text-shelf-muted border-shelf-border hover:text-shelf-text"
-              }`}
-            >
-              Jamais joués masqués
-            </button>
-            <button
-              onClick={toggleCompletedOnly}
-              disabled={checkingAchievements}
-              className={`text-sm px-3 py-2 rounded-full border transition-colors disabled:opacity-50 ${
-                completedOnly
-                  ? "bg-brass/15 text-brass border-brass/40"
-                  : "bg-transparent text-shelf-muted border-shelf-border hover:text-shelf-text"
-              }`}
-            >
-              {checkingAchievements ? "Vérification…" : "100% terminés"}
-            </button>
+            <FilterMenu
+              statusFilter={statusFilter}
+              onStatusFilterChange={setStatusFilter}
+              duplicatesOnly={duplicatesOnly}
+              onDuplicatesOnlyChange={setDuplicatesOnly}
+              hideNeverPlayed={hideNeverPlayed}
+              onHideNeverPlayedChange={setHideNeverPlayed}
+              completedOnly={completedOnly}
+              onToggleCompletedOnly={toggleCompletedOnly}
+              checkingAchievements={checkingAchievements}
+            />
 
             <span className="text-shelf-muted/70 text-xs ml-auto">
               {filteredEntries.length} jeu(x) affiché(s)

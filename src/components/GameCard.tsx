@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import type { GameStatus, LibraryEntry } from "@/types/game";
+import { GAME_STATUS_LABELS, type GameStatus, type LibraryEntry } from "@/types/game";
 import { formatHours } from "@/lib/format";
 import { placeholderGradient } from "@/lib/placeholder";
 
@@ -10,13 +10,6 @@ const STATUS_DOT: Partial<Record<GameStatus, string>> = {
   playing: "bg-brass",
   completed: "bg-sage",
   abandoned: "bg-rust",
-};
-
-const STATUS_TITLE: Record<GameStatus, string> = {
-  backlog: "À jouer",
-  playing: "En cours",
-  completed: "Terminé",
-  abandoned: "Abandonné",
 };
 
 function steamFallbackUrl(entry: LibraryEntry): string | undefined {
@@ -80,15 +73,19 @@ export default function GameCard({
       {status && STATUS_DOT[status] && (
         <span
           className={`absolute top-1.5 left-1.5 w-2 h-2 rounded-full ${STATUS_DOT[status]}`}
-          title={STATUS_TITLE[status]}
+          title={GAME_STATUS_LABELS[status]}
         />
       )}
 
-      <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 to-transparent px-2 pt-6 pb-1.5 opacity-0 transition-opacity duration-300 ease-out group-hover:opacity-100 group-focus-visible:opacity-100">
-        <div className="text-xs font-medium text-white truncate">
+      {/* Title stays visible at rest — a plain color tile (missing cover
+          art) would otherwise be unidentifiable until hovered. The second
+          line (playtime/rating) is the only part gated behind hover, to
+          keep the tile calm when just scanning the grid. */}
+      <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent px-2 pt-5 pb-1.5">
+        <div className="text-[11px] font-medium text-white truncate">
           {entry.displayName}
         </div>
-        <div className="text-[10px] text-white/60">
+        <div className="text-[10px] text-white/60 max-h-0 opacity-0 overflow-hidden transition-all duration-200 ease-out group-hover:max-h-4 group-hover:opacity-100 group-focus-visible:max-h-4 group-focus-visible:opacity-100">
           {entry.platforms.every((p) => p.platform === "gog")
             ? "GOG"
             : formatHours(entry.totalPlaytimeMinutes)}
