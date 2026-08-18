@@ -79,7 +79,15 @@ export async function fetchOwnedGames(
   });
 }
 
-/** Fetches unlock progress for a single game's achievements. Not all games have achievements. */
+/**
+ * Fetches unlock progress for a single game's achievements. Not all games
+ * have achievements (Steam reports that as success:false, error:"Requested
+ * app has no stats" — a genuine, cacheable "null"). Any other failure
+ * (private profile, bad key, network hiccup, rate limit) is a real error
+ * and must NOT collapse into the same "no achievements" result, or a
+ * transient failure looks identical to "this game has none" and gets
+ * cached as such for 30 minutes.
+ */
 export async function fetchAchievementSummary(
   apiKey: string,
   steamId: string,
@@ -92,25 +100,53 @@ export async function fetchAchievementSummary(
     )}&key=${encodeURIComponent(apiKey)}&steamid=${encodeURIComponent(
       steamId
     )}&format=json`;
-    try {
-      const data = await steamFetch<{
-        playerstats: {
-          success: boolean;
-          achievements?: { achieved: number }[];
+
+    const res = await fetch(url, { cache: "no-store" });
+
+    if (!res.ok) {
+      let reason = `HTTP ${res.status}`;
+      try {
+        const body = (await res.json()) as {
+          playerstats?: { error?: string };
         };
-      }>(url);
-      const list = data.playerstats.achievements;
-      if (!data.playerstats.success || !list || list.length === 0) {
+        reason = body.playerstats?.error ?? reason;
+      } catch {
+        // body wasn't JSON — keep the HTTP-status reason
+      }
+      if (/no stats/i.test(reason)) {
         return null;
       }
-      const unlocked = list.filter((a) => a.achieved === 1).length;
-      return {
-        total: list.length,
-        unlocked,
-        progressPercent: Math.round((unlocked / list.length) * 100),
+      throw new SteamError(`Succès Steam indisponibles : ${reason}`);
+    }
+
+    const data = (await res.json()) as {
+      playerstats: {
+        success: boolean;
+        error?: string;
+        achievements?: { achieved: number }[];
       };
-    } catch {
+    };
+
+    if (!data.playerstats.success) {
+      if (/no stats/i.test(data.playerstats.error ?? "")) {
+        return null;
+      }
+      throw new SteamError(
+        `Succès Steam indisponibles : ${
+          data.playerstats.error ?? "erreur inconnue"
+        }`
+      );
+    }
+
+    const list = data.playerstats.achievements;
+    if (!list || list.length === 0) {
       return null;
     }
+    const unlocked = list.filter((a) => a.achieved === 1).length;
+    return {
+      total: list.length,
+      unlocked,
+      progressPercent: Math.round((unlocked / list.length) * 100),
+    };
   });
 }

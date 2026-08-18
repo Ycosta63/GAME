@@ -35,7 +35,7 @@ export default function GameDetailModal({
   onClose: () => void;
 }) {
   const [achievements, setAchievements] = useState<
-    Record<string, AchievementSummary | null | "loading">
+    Record<string, AchievementSummary | null | "loading" | { error: string }>
   >({});
 
   useEffect(() => {
@@ -51,9 +51,19 @@ export default function GameDetailModal({
     try {
       const res = await fetch(`/api/steam/achievements/${appId}`);
       const data = await res.json();
+      if (!res.ok) {
+        setAchievements((prev) => ({
+          ...prev,
+          [appId]: { error: data.error ?? "Erreur inconnue" },
+        }));
+        return;
+      }
       setAchievements((prev) => ({ ...prev, [appId]: data.summary ?? null }));
     } catch {
-      setAchievements((prev) => ({ ...prev, [appId]: null }));
+      setAchievements((prev) => ({
+        ...prev,
+        [appId]: { error: "Impossible de contacter le serveur" },
+      }));
     }
   }
 
@@ -177,6 +187,14 @@ export default function GameDetailModal({
                   <span className="text-xs text-shelf-muted">
                     Pas de succès
                   </span>
+                ) : "error" in (achievements[p.id] as object) ? (
+                  <button
+                    className="text-xs underline text-rust hover:text-rust/80 transition-colors"
+                    onClick={() => loadAchievements(p.id)}
+                    title={(achievements[p.id] as { error: string }).error}
+                  >
+                    Erreur — réessayer
+                  </button>
                 ) : (
                   <span className="text-xs text-shelf-muted">
                     🏅 {(achievements[p.id] as AchievementSummary).unlocked}/
