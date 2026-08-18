@@ -1,4 +1,5 @@
-import { claimJson, deleteJson, readJson } from "./store";
+import { claimJson, deleteJson, listJsonKeys, readJson } from "./store";
+import { readSettings } from "./settings";
 
 const NAMESPACE = "handle-owner";
 
@@ -49,4 +50,33 @@ export async function claimHandle(
 
 export async function releaseHandle(handle: string): Promise<void> {
   await deleteJson(NAMESPACE, normalizeHandle(handle));
+}
+
+/**
+ * Every handle currently claimed AND actually toggled public right now —
+ * a handle stays reserved (in the "handle-owner" namespace) even after its
+ * owner flips their profile back to private, so presence in the map alone
+ * isn't enough; each candidate's settings.publicProfile is the source of
+ * truth. Fine for a small community directory; would need pagination well
+ * before this scans thousands of handles on every request.
+ */
+export async function listPublicHandles(): Promise<
+  { handle: string; userId: string }[]
+> {
+  const handles = await listJsonKeys(NAMESPACE);
+  const withOwners = await Promise.all(
+    handles.map(async (handle) => ({ handle, userId: await ownerForHandle(handle) }))
+  );
+
+  const results: { handle: string; userId: string }[] = [];
+  await Promise.all(
+    withOwners.map(async ({ handle, userId }) => {
+      if (!userId) return;
+      const settings = await readSettings(userId);
+      if (settings.publicProfile) {
+        results.push({ handle, userId });
+      }
+    })
+  );
+  return results.sort((a, b) => a.handle.localeCompare(b.handle));
 }

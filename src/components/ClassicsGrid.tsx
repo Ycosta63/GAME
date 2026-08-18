@@ -46,30 +46,31 @@ function ClassicTile({ classic }: { classic: Classic }) {
   );
 }
 
-export default function ClassicsSection({ entries }: { entries: LibraryEntry[] }) {
+export default function ClassicsGrid({
+  entries,
+  limit,
+}: {
+  entries: LibraryEntry[];
+  limit?: number;
+}) {
   const classics = useMemo(
-    () => missingClassics(entries.map((e) => e.displayName)),
-    [entries]
+    () => missingClassics(entries.map((e) => e.displayName), limit),
+    [entries, limit]
   );
 
-  if (classics.length === 0) return null;
+  if (classics.length === 0) {
+    return (
+      <p className="text-shelf-muted text-sm">
+        Tu possèdes déjà tous les classiques de la sélection — bravo.
+      </p>
+    );
+  }
 
   return (
-    <section className="space-y-3 pt-2 border-t border-shelf-border">
-      <div className="pt-4">
-        <h2 className="text-sm font-semibold text-shelf-text">
-          Classiques à découvrir
-        </h2>
-        <p className="text-xs text-shelf-muted mt-0.5">
-          Une sélection de jeux reconnus que tu ne possèdes pas encore —
-          clique pour voir la fiche Steam.
-        </p>
-      </div>
-      <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-7 lg:grid-cols-8 gap-1">
-        {classics.map((c) => (
-          <ClassicTile key={c.appid} classic={c} />
-        ))}
-      </div>
-    </section>
+    <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-7 lg:grid-cols-8 gap-1">
+      {classics.map((c) => (
+        <ClassicTile key={c.appid} classic={c} />
+      ))}
+    </div>
   );
 }

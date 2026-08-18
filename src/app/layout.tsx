@@ -38,14 +38,14 @@ export default async function RootLayout({
       <body className="font-sans">
         <div className="min-h-screen flex flex-col">
           <header className="border-b border-shelf-border/60">
-            <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+            <div className="max-w-6xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-x-6 gap-y-2">
               <Link href="/" className="flex items-center gap-2 text-brass">
                 <ShelfieMark className="w-6 h-5" />
                 <span className="font-display font-semibold text-lg tracking-tight text-shelf-text">
                   Shelfie
                 </span>
               </Link>
-              <nav className="flex items-center gap-5 text-sm">
+              <nav className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
                 <NavLinks />
                 {session?.user && (
                   <div className="flex items-center gap-2">

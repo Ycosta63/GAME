@@ -118,6 +118,25 @@ export async function claimJson<T>(
   return true;
 }
 
+/** Lists every key currently stored in a namespace (decoded back to the
+ * original key, not the storage-encoded form). Used for small, admin-ish
+ * enumerations (e.g. every claimed public handle) — not meant for
+ * namespaces that could grow into the thousands, since the file backend
+ * does a full directory scan and Redis KEYS is O(n) too. */
+export async function listJsonKeys(namespace: string): Promise<string[]> {
+  if (redis) {
+    const prefix = `${REDIS_KEY_PREFIX}${namespace}:`;
+    const keys = await redis.keys(`${prefix}*`);
+    return keys.map((k) => k.slice(prefix.length));
+  }
+  ensureDataDir();
+  const filePrefix = `${namespace}-`;
+  return fs
+    .readdirSync(DATA_DIR)
+    .filter((f) => f.startsWith(filePrefix) && f.endsWith(".json"))
+    .map((f) => decodeURIComponent(f.slice(filePrefix.length, -".json".length)));
+}
+
 export async function deleteJsonPrefix(
   namespace: string,
   keyPrefix: string
