@@ -2,9 +2,22 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import type { LibraryEntry } from "@/types/game";
+import type { GameStatus, LibraryEntry } from "@/types/game";
 import { formatHours } from "@/lib/format";
 import { placeholderGradient } from "@/lib/placeholder";
+
+const STATUS_DOT: Partial<Record<GameStatus, string>> = {
+  playing: "bg-brass",
+  completed: "bg-sage",
+  abandoned: "bg-rust",
+};
+
+const STATUS_TITLE: Record<GameStatus, string> = {
+  backlog: "À jouer",
+  playing: "En cours",
+  completed: "Terminé",
+  abandoned: "Abandonné",
+};
 
 function steamFallbackUrl(entry: LibraryEntry): string | undefined {
   const steam = entry.platforms.find((p) => p.platform === "steam");
@@ -13,9 +26,11 @@ function steamFallbackUrl(entry: LibraryEntry): string | undefined {
 
 export default function GameCard({
   entry,
+  status,
   onSelect,
 }: {
   entry: LibraryEntry;
+  status?: GameStatus;
   onSelect: () => void;
 }) {
   const [stage, setStage] = useState<"cover" | "fallback" | "none">("cover");
@@ -57,6 +72,13 @@ export default function GameCard({
         <span
           className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-rust"
           title={`Doublon ×${entry.platforms.length}`}
+        />
+      )}
+
+      {status && STATUS_DOT[status] && (
+        <span
+          className={`absolute top-1.5 left-1.5 w-2 h-2 rounded-full ${STATUS_DOT[status]}`}
+          title={STATUS_TITLE[status]}
         />
       )}
 

@@ -62,6 +62,16 @@ export interface LibraryStats {
   neverPlayed: number;
 }
 
+export type GameStatus = "backlog" | "playing" | "completed" | "abandoned";
+
+export interface GameData {
+  status?: GameStatus;
+  rating?: number;
+  note?: string;
+}
+
+export type GameDataMap = Record<string, GameData>;
+
 export interface LibraryResponse {
   entries: LibraryEntry[];
   stats: LibraryStats;

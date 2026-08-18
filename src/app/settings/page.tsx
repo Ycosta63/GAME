@@ -6,9 +6,19 @@ interface RedactedSettings {
   steamApiKey: string;
   steamId: string;
   psnNpsso: string;
+  psnNpssoSavedAt: string;
   hasSteam: boolean;
   hasPsn: boolean;
   hasGog: boolean;
+}
+
+// Sony doesn't document the NPSSO token's exact lifetime; ~2 months is the
+// widely observed value among third-party PSN tools. Warn a bit early so
+// there's time to refresh it before the library silently stops updating.
+const PSN_TOKEN_WARN_AFTER_DAYS = 50;
+
+function daysSince(iso: string): number {
+  return Math.floor((Date.now() - new Date(iso).getTime()) / 86_400_000);
 }
 
 function SteamIcon() {
@@ -220,6 +230,17 @@ export default function SettingsPage() {
             <span className="text-xs text-sage">Connecté</span>
           )}
         </div>
+        {settings?.hasPsn &&
+          settings.psnNpssoSavedAt &&
+          daysSince(settings.psnNpssoSavedAt) >= PSN_TOKEN_WARN_AFTER_DAYS && (
+            <div className="bg-rust/10 border border-rust/30 text-rust rounded-lg px-3 py-2 text-xs">
+              Ton jeton NPSSO a été enregistré il y a{" "}
+              {daysSince(settings.psnNpssoSavedAt)} jours — il expire
+              généralement vers 2 mois. S&apos;il a expiré, ta bibliothèque
+              PlayStation s&apos;arrêtera de se mettre à jour ; récupère-en
+              un nouveau ci-dessous et remplace-le.
+            </div>
+          )}
         <p className="text-xs text-shelf-muted">
           1. Connecte-toi sur{" "}
           <span className="underline">my.playstation.com</span>.<br />

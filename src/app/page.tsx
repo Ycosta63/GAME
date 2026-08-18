@@ -8,12 +8,25 @@ import GameDetailModal from "@/components/GameDetailModal";
 import ShelfieMark from "@/components/ShelfieMark";
 import LibrarySkeleton from "@/components/LibrarySkeleton";
 import { fuzzyMatch } from "@/lib/fuzzy";
-import type { LibraryEntry, LibraryResponse, Platform } from "@/types/game";
+import type {
+  GameDataMap,
+  GameStatus,
+  LibraryEntry,
+  LibraryResponse,
+  Platform,
+} from "@/types/game";
 
 const PLATFORM_LABELS: Record<Platform, string> = {
   steam: "Steam",
   psn: "PlayStation",
   gog: "GOG",
+};
+
+const STATUS_LABELS: Record<GameStatus, string> = {
+  backlog: "À jouer",
+  playing: "En cours",
+  completed: "Terminé",
+  abandoned: "Abandonné",
 };
 
 type SortMode = "playtime" | "name" | "lastPlayed";
@@ -40,8 +53,10 @@ export default function DashboardPage() {
   const [duplicatesOnly, setDuplicatesOnly] = useState(false);
   const [hideNeverPlayed, setHideNeverPlayed] = useState(false);
   const [completedOnly, setCompletedOnly] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<GameStatus | "all">("all");
   const [sortMode, setSortMode] = useState<SortMode>("playtime");
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
+  const [gameData, setGameData] = useState<GameDataMap>({});
 
   // Steam appid -> completion % (or null = no achievements / private / error).
   // PSN completion comes bundled with the library fetch (trophies.progressPercent),
@@ -72,6 +87,13 @@ export default function DashboardPage() {
   useEffect(() => {
     load(false);
   }, [load]);
+
+  useEffect(() => {
+    fetch("/api/game-data")
+      .then((res) => (res.ok ? res.json() : {}))
+      .then(setGameData)
+      .catch(() => {});
+  }, []);
 
   const checkSteamCompletion = useCallback(async () => {
     if (!data) return;
@@ -149,6 +171,10 @@ export default function DashboardPage() {
         });
         if (!isComplete) return false;
       }
+      if (statusFilter !== "all") {
+        const status = gameData[entry.key]?.status ?? "backlog";
+        if (status !== statusFilter) return false;
+      }
       return true;
     });
 
@@ -169,6 +195,8 @@ export default function DashboardPage() {
     hideNeverPlayed,
     completedOnly,
     achievementProgress,
+    statusFilter,
+    gameData,
     sortMode,
   ]);
 
@@ -278,6 +306,19 @@ export default function DashboardPage() {
               <option value="gog">GOG</option>
             </select>
             <select
+              value={statusFilter}
+              onChange={(e) =>
+                setStatusFilter(e.target.value as GameStatus | "all")
+              }
+              className="bg-transparent border border-shelf-border rounded-full px-3 py-2 text-sm text-shelf-muted outline-none focus:border-brass/50 hover:text-shelf-text cursor-pointer transition-colors"
+            >
+              <option value="all">Tous les statuts</option>
+              <option value="backlog">{STATUS_LABELS.backlog}</option>
+              <option value="playing">{STATUS_LABELS.playing}</option>
+              <option value="completed">{STATUS_LABELS.completed}</option>
+              <option value="abandoned">{STATUS_LABELS.abandoned}</option>
+            </select>
+            <select
               value={sortMode}
               onChange={(e) => setSortMode(e.target.value as SortMode)}
               className="bg-transparent border border-shelf-border rounded-full px-3 py-2 text-sm text-shelf-muted outline-none focus:border-brass/50 hover:text-shelf-text cursor-pointer transition-colors"
@@ -341,6 +382,7 @@ export default function DashboardPage() {
               <GameCard
                 key={entry.key}
                 entry={entry}
+                status={gameData[entry.key]?.status}
                 onSelect={() => setSelectedKey(entry.key)}
               />
             ))}
@@ -356,6 +398,13 @@ export default function DashboardPage() {
       {selectedEntry && (
         <GameDetailModal
           entry={selectedEntry}
+          data={gameData[selectedEntry.key] ?? {}}
+          onDataChange={(patch) =>
+            setGameData((prev) => ({
+              ...prev,
+              [selectedEntry.key]: { ...prev[selectedEntry.key], ...patch },
+            }))
+          }
           onClose={() => setSelectedKey(null)}
         />
       )}

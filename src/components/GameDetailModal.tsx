@@ -2,10 +2,75 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
-import type { AchievementDetails, LibraryEntry } from "@/types/game";
+import type {
+  AchievementDetails,
+  GameData,
+  GameStatus,
+  LibraryEntry,
+} from "@/types/game";
 import PlatformBadge from "./PlatformBadge";
 import { formatDate, formatHours } from "@/lib/format";
 import { placeholderGradient } from "@/lib/placeholder";
+
+const STATUS_OPTIONS: { value: GameStatus; label: string }[] = [
+  { value: "backlog", label: "À jouer" },
+  { value: "playing", label: "En cours" },
+  { value: "completed", label: "Terminé" },
+  { value: "abandoned", label: "Abandonné" },
+];
+
+function StatusPicker({
+  status,
+  onChange,
+}: {
+  status?: GameStatus;
+  onChange: (status: GameStatus) => void;
+}) {
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {STATUS_OPTIONS.map((opt) => (
+        <button
+          key={opt.value}
+          onClick={() => onChange(opt.value)}
+          className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${
+            status === opt.value
+              ? "bg-brass/15 text-brass border-brass/40"
+              : "bg-transparent text-shelf-muted border-shelf-border hover:text-shelf-text"
+          }`}
+        >
+          {opt.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function RatingPicker({
+  rating,
+  onChange,
+}: {
+  rating?: number;
+  onChange: (rating: number) => void;
+}) {
+  return (
+    <div className="flex gap-0.5">
+      {[1, 2, 3, 4, 5].map((n) => (
+        <button
+          key={n}
+          onClick={() => onChange(rating === n ? 0 : n)}
+          className={`text-lg leading-none transition-colors ${
+            rating && n <= rating
+              ? "text-brass"
+              : "text-shelf-border hover:text-brass/50"
+          }`}
+          aria-label={`${n} étoile${n > 1 ? "s" : ""}`}
+        >
+          ★
+        </button>
+      ))}
+    </div>
+  );
+}
 
 function TrophyLine({
   platinum,
@@ -30,15 +95,21 @@ function TrophyLine({
 
 export default function GameDetailModal({
   entry,
+  data,
+  onDataChange,
   onClose,
 }: {
   entry: LibraryEntry;
+  data: GameData;
+  onDataChange: (patch: Partial<GameData>) => void;
   onClose: () => void;
 }) {
   const [achievements, setAchievements] = useState<
     Record<string, AchievementDetails | null | "loading" | { error: string }>
   >({});
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+  const [note, setNote] = useState(data.note ?? "");
+  const [savingNote, setSavingNote] = useState(false);
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -47,6 +118,31 @@ export default function GameDetailModal({
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
+
+  // status/rating use `null` (not `undefined`) to mean "clear" — JSON.stringify
+  // drops undefined keys entirely, which would silently no-op the clear.
+  async function saveGameData(patch: {
+    status?: GameStatus | null;
+    rating?: number | null;
+    note?: string;
+  }) {
+    const clientPatch: Partial<GameData> = {};
+    if ("status" in patch) clientPatch.status = patch.status ?? undefined;
+    if ("rating" in patch) clientPatch.rating = patch.rating ?? undefined;
+    if ("note" in patch) clientPatch.note = patch.note;
+    onDataChange(clientPatch);
+    await fetch("/api/game-data", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ key: entry.key, ...patch }),
+    }).catch(() => {});
+  }
+
+  async function saveNote() {
+    setSavingNote(true);
+    await saveGameData({ note });
+    setSavingNote(false);
+  }
 
   async function loadAchievements(appId: string) {
     setAchievements((prev) => ({ ...prev, [appId]: "loading" }));
@@ -150,6 +246,39 @@ export default function GameDetailModal({
               </div>
             </div>
           </div>
+        </div>
+
+        <div className="border-t border-shelf-border p-4 space-y-3">
+          <StatusPicker
+            status={data.status}
+            onChange={(status) =>
+              saveGameData({ status: data.status === status ? null : status })
+            }
+          />
+          <div className="flex items-center gap-3">
+            <RatingPicker
+              rating={data.rating}
+              onChange={(rating) => saveGameData({ rating: rating || null })}
+            />
+          </div>
+          <div className="flex gap-2">
+            <textarea
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              placeholder="Note personnelle (visible seulement par toi)…"
+              rows={2}
+              className="flex-1 bg-shelf-surface border border-shelf-border rounded-lg px-3 py-2 text-xs text-shelf-text outline-none focus:border-brass/50 resize-none"
+            />
+          </div>
+          {note !== (data.note ?? "") && (
+            <button
+              onClick={saveNote}
+              disabled={savingNote}
+              className="text-xs bg-brass text-brass-ink font-semibold px-3 py-1.5 rounded-lg hover:bg-brass-hover transition-colors disabled:opacity-50"
+            >
+              {savingNote ? "…" : "Enregistrer la note"}
+            </button>
+          )}
         </div>
 
         <div className="border-t border-shelf-border divide-y divide-shelf-border">
