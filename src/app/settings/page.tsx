@@ -10,6 +10,8 @@ interface RedactedSettings {
   hasSteam: boolean;
   hasPsn: boolean;
   hasGog: boolean;
+  publicProfile: boolean;
+  publicHandle: string;
 }
 
 // Sony doesn't document the NPSSO token's exact lifetime; ~2 months is the
@@ -44,11 +46,18 @@ export default function SettingsPage() {
   const [status, setStatus] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [connectingGog, setConnectingGog] = useState(false);
+  const [handleInput, setHandleInput] = useState("");
+  const [savingHandle, setSavingHandle] = useState(false);
+  const [togglingPublic, setTogglingPublic] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   function load() {
     fetch("/api/settings")
       .then((res) => res.json())
-      .then(setSettings);
+      .then((s: RedactedSettings) => {
+        setSettings(s);
+        setHandleInput((prev) => prev || s.publicHandle);
+      });
   }
 
   useEffect(() => {
@@ -108,9 +117,61 @@ export default function SettingsPage() {
     }
   }
 
-  async function disconnect(field: "steam" | "psn" | "gog") {
+  async function disconnect(field: "steam" | "psn" | "gog" | "public") {
     await fetch(`/api/settings?field=${field}`, { method: "DELETE" });
     load();
+  }
+
+  async function saveHandle(e: React.FormEvent) {
+    e.preventDefault();
+    setSavingHandle(true);
+    setStatus(null);
+    try {
+      const res = await fetch("/api/settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ publicHandle: handleInput.trim().toLowerCase() }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      setStatus("Nom enregistré.");
+      load();
+    } catch (err) {
+      setStatus(err instanceof Error ? err.message : "Erreur lors de l'enregistrement.");
+    } finally {
+      setSavingHandle(false);
+    }
+  }
+
+  async function togglePublic() {
+    if (!settings) return;
+    setTogglingPublic(true);
+    setStatus(null);
+    try {
+      const res = await fetch("/api/settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ publicProfile: !settings.publicProfile }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      load();
+    } catch (err) {
+      setStatus(err instanceof Error ? err.message : "Erreur lors de la mise à jour.");
+    } finally {
+      setTogglingPublic(false);
+    }
+  }
+
+  function copyPublicLink() {
+    if (!settings?.publicHandle) return;
+    navigator.clipboard
+      .writeText(`${window.location.origin}/u/${settings.publicHandle}`)
+      .then(() => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      })
+      .catch(() => {});
   }
 
   return (
@@ -284,6 +345,76 @@ export default function SettingsPage() {
             )}
           </div>
         </form>
+      </section>
+
+      <section className="bg-shelf-card border border-shelf-border rounded-xl p-4 space-y-3">
+        <div className="flex items-center justify-between">
+          <h2 className="font-semibold text-shelf-text">Profil public</h2>
+          {settings?.publicProfile && (
+            <span className="text-xs text-sage">Public</span>
+          )}
+        </div>
+        <p className="text-xs text-shelf-muted">
+          Comme sur Letterboxd : choisis un nom, active la visibilité, et
+          n&apos;importe qui avec le lien peut voir ta bibliothèque (jaquettes,
+          statuts, notes en étoiles) sans se connecter. Tes notes personnelles
+          en texte libre restent toujours privées.
+        </p>
+
+        <form onSubmit={saveHandle} className="flex items-center gap-3">
+          <span className="text-shelf-muted text-sm">/u/</span>
+          <input
+            type="text"
+            placeholder="ton-nom"
+            value={handleInput}
+            onChange={(e) => setHandleInput(e.target.value.toLowerCase())}
+            className="flex-1 bg-shelf-surface border border-shelf-border rounded-lg px-3 py-2 text-sm text-shelf-text outline-none focus:border-brass/50"
+          />
+          <button
+            type="submit"
+            disabled={
+              savingHandle || !handleInput.trim() || handleInput === settings?.publicHandle
+            }
+            className="bg-brass text-brass-ink text-sm font-semibold px-4 py-2 rounded-lg hover:bg-brass-hover transition-colors disabled:opacity-50 flex-shrink-0"
+          >
+            {savingHandle ? "…" : "Valider"}
+          </button>
+        </form>
+
+        {settings?.publicHandle && (
+          <div className="flex items-center gap-3 flex-wrap">
+            <button
+              type="button"
+              onClick={togglePublic}
+              disabled={togglingPublic}
+              className={`text-sm px-3 py-2 rounded-full border transition-colors disabled:opacity-50 ${
+                settings.publicProfile
+                  ? "bg-brass/15 text-brass border-brass/40"
+                  : "bg-transparent text-shelf-muted border-shelf-border hover:text-shelf-text"
+              }`}
+            >
+              {settings.publicProfile ? "Rendre privé" : "Rendre public"}
+            </button>
+            {settings.publicProfile && (
+              <>
+                <button
+                  type="button"
+                  onClick={copyPublicLink}
+                  className="text-xs text-shelf-muted hover:text-brass underline"
+                >
+                  {copied ? "Lien copié !" : `Copier /u/${settings.publicHandle}`}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => disconnect("public")}
+                  className="text-xs text-rust hover:text-rust/80 underline"
+                >
+                  Désactiver et libérer le nom
+                </button>
+              </>
+            )}
+          </div>
+        )}
       </section>
 
       {status && <p className="text-sm text-shelf-muted">{status}</p>}

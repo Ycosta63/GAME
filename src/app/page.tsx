@@ -383,6 +383,7 @@ export default function DashboardPage() {
                 key={entry.key}
                 entry={entry}
                 status={gameData[entry.key]?.status}
+                rating={gameData[entry.key]?.rating}
                 onSelect={() => setSelectedKey(entry.key)}
               />
             ))}

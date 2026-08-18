@@ -8,6 +8,8 @@ export interface AppSettings {
   gogAccessToken?: string;
   gogRefreshToken?: string;
   gogUserId?: string;
+  publicProfile?: boolean;
+  publicHandle?: string;
 }
 
 export async function readSettings(userId: string): Promise<AppSettings> {
@@ -40,5 +42,7 @@ export function redactSettings(settings: AppSettings) {
     hasSteam: Boolean(settings.steamId),
     hasPsn: Boolean(settings.psnNpsso),
     hasGog: Boolean(settings.gogAccessToken),
+    publicProfile: Boolean(settings.publicProfile),
+    publicHandle: settings.publicHandle ?? "",
   };
 }

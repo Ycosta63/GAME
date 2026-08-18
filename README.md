@@ -105,6 +105,13 @@ l'étape ci-dessus.
   (bypass du cache de 5 min), avec horodatage de la dernière synchro
 - Multi-utilisateur : connexion Google, bibliothèque et identifiants
   Steam/PSN isolés par compte
+- Statut perso par jeu (à jouer / en cours / terminé / abandonné), note en
+  étoiles, note personnelle en texte libre
+- Profil public façon Letterboxd (optionnel) : `Réglages → Profil public`,
+  choisis un nom et rends ta bibliothèque visible à `/u/ton-nom` sans que
+  les visiteurs aient besoin de se connecter. Seuls les jaquettes, statuts
+  et notes en étoiles sont montrés — les notes personnelles en texte libre
+  restent toujours privées, même sur le profil public.
 
 ## Héberger le site pour que tout le monde puisse l'utiliser
 

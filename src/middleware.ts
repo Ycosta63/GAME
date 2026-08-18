@@ -2,7 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { getToken } from "next-auth/jwt";
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|login|api/auth).*)"],
+  // /u/* is the opt-in public profile page (Letterboxd-style) — deliberately
+  // reachable without signing in, since that's the whole point of it.
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|login|api/auth|u/).*)"],
 };
 
 export async function middleware(req: NextRequest) {

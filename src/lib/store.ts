@@ -82,6 +82,42 @@ export async function writeJsonWithTtl<T>(
   await writeJson(namespace, key, value);
 }
 
+export async function deleteJson(namespace: string, key: string): Promise<void> {
+  if (redis) {
+    await redis.del(`${REDIS_KEY_PREFIX}${namespace}:${key}`);
+    return;
+  }
+  ensureDataDir();
+  const file = filePath(namespace, key);
+  if (fs.existsSync(file)) {
+    fs.unlinkSync(file);
+  }
+}
+
+/** Atomic set-if-absent — used for claiming a handle so two users racing
+ * for the same one can't both "win". Returns true if this call claimed it,
+ * false if something was already there. The file backend has no atomic
+ * primitive to fall back on (dev-only, single process, not a real race). */
+export async function claimJson<T>(
+  namespace: string,
+  key: string,
+  value: T
+): Promise<boolean> {
+  if (redis) {
+    const result = await redis.set(`${REDIS_KEY_PREFIX}${namespace}:${key}`, value, {
+      nx: true,
+    });
+    return result !== null;
+  }
+  ensureDataDir();
+  const file = filePath(namespace, key);
+  if (fs.existsSync(file)) {
+    return false;
+  }
+  fs.writeFileSync(file, JSON.stringify(value, null, 2), "utf-8");
+  return true;
+}
+
 export async function deleteJsonPrefix(
   namespace: string,
   keyPrefix: string

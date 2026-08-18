@@ -27,10 +27,12 @@ function steamFallbackUrl(entry: LibraryEntry): string | undefined {
 export default function GameCard({
   entry,
   status,
+  rating,
   onSelect,
 }: {
   entry: LibraryEntry;
   status?: GameStatus;
+  rating?: number;
   onSelect: () => void;
 }) {
   const [stage, setStage] = useState<"cover" | "fallback" | "none">("cover");
@@ -90,6 +92,7 @@ export default function GameCard({
           {entry.platforms.every((p) => p.platform === "gog")
             ? "GOG"
             : formatHours(entry.totalPlaytimeMinutes)}
+          {rating ? ` · ★${rating}` : ""}
         </div>
       </div>
     </button>
