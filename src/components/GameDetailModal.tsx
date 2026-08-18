@@ -106,6 +106,10 @@ export default function GameDetailModal({
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [note, setNote] = useState(data.note ?? "");
   const [savingNote, setSavingNote] = useState(false);
+  const [publicReview, setPublicReview] = useState(data.publicReview ?? "");
+  const [savingReview, setSavingReview] = useState(false);
+  const [favorite, setFavorite] = useState(data.favorite ?? false);
+  const [favoriteError, setFavoriteError] = useState<string | null>(null);
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -121,23 +125,53 @@ export default function GameDetailModal({
     status?: GameStatus | null;
     rating?: number | null;
     note?: string;
-  }) {
-    const clientPatch: Partial<GameData> = {};
-    if ("status" in patch) clientPatch.status = patch.status ?? undefined;
-    if ("rating" in patch) clientPatch.rating = patch.rating ?? undefined;
-    if ("note" in patch) clientPatch.note = patch.note;
-    onDataChange(clientPatch);
-    await fetch("/api/game-data", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ key: entry.key, ...patch }),
-    }).catch(() => {});
+    favorite?: boolean;
+    publicReview?: string;
+  }): Promise<{ ok: boolean; error?: string }> {
+    try {
+      const res = await fetch("/api/game-data", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ key: entry.key, ...patch }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        return { ok: false, error: json.error ?? "Erreur inconnue" };
+      }
+      const clientPatch: Partial<GameData> = {};
+      if ("status" in patch) clientPatch.status = patch.status ?? undefined;
+      if ("rating" in patch) clientPatch.rating = patch.rating ?? undefined;
+      if ("note" in patch) clientPatch.note = patch.note;
+      if ("favorite" in patch) clientPatch.favorite = patch.favorite;
+      if ("publicReview" in patch) clientPatch.publicReview = patch.publicReview;
+      onDataChange(clientPatch);
+      return { ok: true };
+    } catch {
+      return { ok: false, error: "Impossible de contacter le serveur" };
+    }
   }
 
   async function saveNote() {
     setSavingNote(true);
     await saveGameData({ note });
     setSavingNote(false);
+  }
+
+  async function saveReview() {
+    setSavingReview(true);
+    await saveGameData({ publicReview });
+    setSavingReview(false);
+  }
+
+  async function toggleFavorite() {
+    const next = !favorite;
+    setFavoriteError(null);
+    const result = await saveGameData({ favorite: next });
+    if (result.ok) {
+      setFavorite(next);
+    } else {
+      setFavoriteError(result.error ?? "Erreur inconnue");
+    }
   }
 
   async function loadAchievements(appId: string) {
@@ -245,36 +279,74 @@ export default function GameDetailModal({
         </div>
 
         <div className="border-t border-shelf-border p-4 space-y-3">
-          <StatusPicker
-            status={data.status}
-            onChange={(status) =>
-              saveGameData({ status: data.status === status ? null : status })
-            }
-          />
+          <div className="flex items-center justify-between gap-3">
+            <StatusPicker
+              status={data.status}
+              onChange={(status) =>
+                saveGameData({ status: data.status === status ? null : status })
+              }
+            />
+            <button
+              onClick={toggleFavorite}
+              title={
+                favorite
+                  ? "Retirer du Top 4"
+                  : "Ajouter au Top 4 de ton profil public"
+              }
+              className={`flex-shrink-0 text-lg leading-none transition-colors ${
+                favorite ? "text-brass" : "text-shelf-muted/50 hover:text-brass/60"
+              }`}
+            >
+              {favorite ? "★" : "☆"}
+            </button>
+          </div>
+          {favoriteError && (
+            <p className="text-xs text-rust">{favoriteError}</p>
+          )}
           <div className="flex items-center gap-3">
             <RatingPicker
               rating={data.rating}
               onChange={(rating) => saveGameData({ rating: rating || null })}
             />
           </div>
-          <div className="flex gap-2">
+
+          <div className="space-y-1.5">
             <textarea
               value={note}
               onChange={(e) => setNote(e.target.value)}
               placeholder="Note personnelle (visible seulement par toi)…"
               rows={2}
-              className="flex-1 bg-shelf-surface border border-shelf-border rounded-lg px-3 py-2 text-xs text-shelf-text outline-none focus:border-brass/50 resize-none"
+              className="w-full bg-shelf-surface border border-shelf-border rounded-lg px-3 py-2 text-xs text-shelf-text outline-none focus:border-brass/50 resize-none"
             />
+            {note !== (data.note ?? "") && (
+              <button
+                onClick={saveNote}
+                disabled={savingNote}
+                className="text-xs bg-brass text-brass-ink font-semibold px-3 py-1.5 rounded-lg hover:bg-brass-hover transition-colors disabled:opacity-50"
+              >
+                {savingNote ? "…" : "Enregistrer la note"}
+              </button>
+            )}
           </div>
-          {note !== (data.note ?? "") && (
-            <button
-              onClick={saveNote}
-              disabled={savingNote}
-              className="text-xs bg-brass text-brass-ink font-semibold px-3 py-1.5 rounded-lg hover:bg-brass-hover transition-colors disabled:opacity-50"
-            >
-              {savingNote ? "…" : "Enregistrer la note"}
-            </button>
-          )}
+
+          <div className="space-y-1.5">
+            <textarea
+              value={publicReview}
+              onChange={(e) => setPublicReview(e.target.value)}
+              placeholder="Avis public (visible sur ton profil public, si activé)…"
+              rows={2}
+              className="w-full bg-shelf-surface border border-shelf-border rounded-lg px-3 py-2 text-xs text-shelf-text outline-none focus:border-brass/50 resize-none"
+            />
+            {publicReview !== (data.publicReview ?? "") && (
+              <button
+                onClick={saveReview}
+                disabled={savingReview}
+                className="text-xs bg-brass text-brass-ink font-semibold px-3 py-1.5 rounded-lg hover:bg-brass-hover transition-colors disabled:opacity-50"
+              >
+                {savingReview ? "…" : "Enregistrer l'avis"}
+              </button>
+            )}
+          </div>
         </div>
 
         <div className="border-t border-shelf-border divide-y divide-shelf-border">

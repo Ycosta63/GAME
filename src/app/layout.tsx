@@ -6,7 +6,14 @@ import { authEnabled, authOptions } from "@/lib/authOptions";
 import LogoutButton from "@/components/LogoutButton";
 import ShelfieMark from "@/components/ShelfieMark";
 import NavLinks from "@/components/NavLinks";
+import GlobalSearch from "@/components/GlobalSearch";
+import ThemeToggle from "@/components/ThemeToggle";
 import "./globals.css";
+
+// Runs before React hydrates so the light theme (if chosen) applies before
+// first paint instead of flashing dark-then-light. Static string, no user
+// input involved — safe to inject directly.
+const THEME_INIT_SCRIPT = `try{if(localStorage.getItem('shelfie-theme')==='light')document.documentElement.setAttribute('data-theme','light');}catch(e){}`;
 
 const displayFont = Fraunces({
   subsets: ["latin"],
@@ -36,6 +43,7 @@ export default async function RootLayout({
   return (
     <html lang="fr" className={`${displayFont.variable} ${bodyFont.variable}`}>
       <body className="font-sans">
+        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
         <div className="min-h-screen flex flex-col">
           <header className="border-b border-shelf-border/60">
             <div className="max-w-6xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-x-6 gap-y-2">
@@ -47,6 +55,8 @@ export default async function RootLayout({
               </Link>
               <nav className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
                 <NavLinks />
+                <GlobalSearch />
+                <ThemeToggle />
                 {session?.user && (
                   <div className="flex items-center gap-2">
                     {session.user.image && (

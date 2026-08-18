@@ -397,6 +397,14 @@ export default function SettingsPage() {
             </button>
             {settings.publicProfile && (
               <>
+                <a
+                  href={`/u/${settings.publicHandle}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs text-brass hover:text-brass-hover underline"
+                >
+                  Voir mon profil public →
+                </a>
                 <button
                   type="button"
                   onClick={copyPublicLink}

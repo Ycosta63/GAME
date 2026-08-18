@@ -3,31 +3,56 @@
 @tailwind utilities;
 
 :root {
+  --shelf-bg: #121110;
+  --shelf-card: #1b1917;
+  --shelf-surface: #232019;
+  --shelf-border: #2e2b25;
+  --shelf-text: #ece6db;
+  --shelf-muted: #8f8579;
+  --shelf-scrollbar-track: #17150f;
+  --shelf-scrollbar-thumb: #2e2b25;
+  --shelf-scrollbar-thumb-hover: #3c3830;
   color-scheme: dark;
 }
 
+/* Explicit light choice (data-theme is set by the toggle + the
+   before-hydration script in layout.tsx, reading localStorage). Dark stays
+   the default with no attribute set, matching the app's native look. */
+:root[data-theme="light"] {
+  --shelf-bg: #f7f4ee;
+  --shelf-card: #ffffff;
+  --shelf-surface: #f0ece2;
+  --shelf-border: #e2ddd0;
+  --shelf-text: #241f17;
+  --shelf-muted: #7a7166;
+  --shelf-scrollbar-track: #ece7db;
+  --shelf-scrollbar-thumb: #d9d2c2;
+  --shelf-scrollbar-thumb-hover: #c7bfab;
+  color-scheme: light;
+}
+
 body {
-  background-color: #121110;
-  color: #ece6db;
+  background-color: var(--shelf-bg);
+  color: var(--shelf-text);
 }
 
 ::selection {
   background: rgba(224, 145, 60, 0.35);
-  color: #ece6db;
+  color: var(--shelf-text);
 }
 
 ::-webkit-scrollbar {
   width: 10px;
 }
 ::-webkit-scrollbar-track {
-  background: #17150f;
+  background: var(--shelf-scrollbar-track);
 }
 ::-webkit-scrollbar-thumb {
-  background: #2e2b25;
+  background: var(--shelf-scrollbar-thumb);
   border-radius: 6px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #3c3830;
+  background: var(--shelf-scrollbar-thumb-hover);
 }
 
 h1,

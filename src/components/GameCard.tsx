@@ -21,11 +21,13 @@ export default function GameCard({
   entry,
   status,
   rating,
+  favorite,
   onSelect,
 }: {
   entry: LibraryEntry;
   status?: GameStatus;
   rating?: number;
+  favorite?: boolean;
   onSelect: () => void;
 }) {
   const [stage, setStage] = useState<"cover" | "fallback" | "none">("cover");
@@ -83,6 +85,7 @@ export default function GameCard({
           keep the tile calm when just scanning the grid. */}
       <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent px-2 pt-5 pb-1.5">
         <div className="text-[11px] font-medium text-white truncate">
+          {favorite && "★ "}
           {entry.displayName}
         </div>
         <div className="text-[10px] text-white/60 max-h-0 opacity-0 overflow-hidden transition-all duration-200 ease-out group-hover:max-h-4 group-hover:opacity-100 group-focus-visible:max-h-4 group-focus-visible:opacity-100">

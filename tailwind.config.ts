@@ -10,16 +10,18 @@ const config: Config = {
         sans: ["var(--font-body)", "system-ui", "sans-serif"],
       },
       colors: {
-        // Shelfie: restrained near-black neutral, letting cover art carry
-        // the color — like Letterboxd/Trakt, not a "warm dashboard" full of
-        // filled, bordered cards.
+        // Shelfie: restrained neutral, letting cover art carry the color —
+        // like Letterboxd/Trakt, not a "warm dashboard" full of filled,
+        // bordered cards. Values are CSS custom properties (see
+        // globals.css) so the light/dark swap is a single attribute
+        // toggle, not a duplicated component tree.
         shelf: {
-          bg: "#121110",
-          card: "#1b1917",
-          surface: "#232019",
-          border: "#2e2b25",
-          text: "#ece6db",
-          muted: "#8f8579",
+          bg: "var(--shelf-bg)",
+          card: "var(--shelf-card)",
+          surface: "var(--shelf-surface)",
+          border: "var(--shelf-border)",
+          text: "var(--shelf-text)",
+          muted: "var(--shelf-muted)",
         },
         brass: {
           DEFAULT: "#e0913c",

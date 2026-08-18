@@ -74,8 +74,18 @@ export const GAME_STATUS_LABELS: Record<GameStatus, string> = {
 export interface GameData {
   status?: GameStatus;
   rating?: number;
+  /** Private note — never sent to the public profile page. */
   note?: string;
+  /** Up to 4 games total can be favorited (enforced server-side) — shown
+   * as a "Top 4" on the public profile, à la Letterboxd. Public. */
+  favorite?: boolean;
+  /** Optional public review text, distinct from the private note. Public. */
+  publicReview?: string;
+  /** Set automatically server-side whenever any field changes. */
+  updatedAt?: string;
 }
+
+export const MAX_FAVORITES = 4;
 
 export type GameDataMap = Record<string, GameData>;
 

@@ -1,7 +1,13 @@
 import { readJson, writeJson } from "./store";
-import type { GameData, GameDataMap, GameStatus } from "@/types/game";
+import { MAX_FAVORITES, type GameData, type GameDataMap, type GameStatus } from "@/types/game";
 
 const STATUSES: GameStatus[] = ["backlog", "playing", "completed", "abandoned"];
+
+export class TooManyFavoritesError extends Error {
+  constructor() {
+    super(`Tu as déjà ${MAX_FAVORITES} favoris — retires-en un d'abord.`);
+  }
+}
 
 export async function readGameDataMap(userId: string): Promise<GameDataMap> {
   return readJson<GameDataMap>("gamedata", userId, {});
@@ -25,12 +31,27 @@ export async function setGameData(
   if (typeof merged.note === "string" && merged.note.trim()) {
     cleaned.note = merged.note.trim().slice(0, 2000);
   }
+  if (typeof merged.publicReview === "string" && merged.publicReview.trim()) {
+    cleaned.publicReview = merged.publicReview.trim().slice(0, 2000);
+  }
+  if (merged.favorite) {
+    const alreadyFavorited = current[entryKey]?.favorite === true;
+    if (!alreadyFavorited) {
+      const favoriteCount = Object.entries(current).filter(
+        ([key, d]) => key !== entryKey && d.favorite
+      ).length;
+      if (favoriteCount >= MAX_FAVORITES) {
+        throw new TooManyFavoritesError();
+      }
+    }
+    cleaned.favorite = true;
+  }
 
   const next = { ...current };
   if (Object.keys(cleaned).length === 0) {
     delete next[entryKey];
   } else {
-    next[entryKey] = cleaned;
+    next[entryKey] = { ...cleaned, updatedAt: new Date().toISOString() };
   }
   await writeJson("gamedata", userId, next);
   return next;
