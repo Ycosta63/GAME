@@ -34,6 +34,8 @@ export interface AchievementDetail {
   achieved: boolean;
   unlockTime: string | null;
   icon: string;
+  /** % of all players who have this achievement (global Steam stat), when available. */
+  rarityPercent?: number;
 }
 
 export interface AchievementDetails {

@@ -246,7 +246,7 @@ export default function GameDetailModal({
                               ) : (
                                 <div className="w-8 h-8 rounded flex-shrink-0 bg-shelf-surface" />
                               )}
-                              <div className="min-w-0">
+                              <div className="min-w-0 flex-1">
                                 <p className="truncate font-medium">
                                   {a.name}
                                 </p>
@@ -256,6 +256,11 @@ export default function GameDetailModal({
                                   </p>
                                 )}
                               </div>
+                              {a.rarityPercent !== undefined && (
+                                <span className="flex-shrink-0 text-shelf-muted/70 tabular-nums">
+                                  {a.rarityPercent.toFixed(1)}%
+                                </span>
+                              )}
                             </li>
                           )
                         )}

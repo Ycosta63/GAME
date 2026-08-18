@@ -37,12 +37,15 @@ export async function POST(req: NextRequest) {
     }
     if (typeof body.psnNpsso === "string" && body.psnNpsso.trim()) {
       patch.psnNpsso = body.psnNpsso.trim();
+      patch.psnNpssoSavedAt = new Date().toISOString();
     }
 
     const next = await mergeSettings(userId, patch);
-    invalidate("steam:");
-    invalidate("psn:");
-    invalidate("gog:");
+    await Promise.all([
+      invalidate("steam:"),
+      invalidate("psn:"),
+      invalidate("gog:"),
+    ]);
 
     return NextResponse.json(redactSettings(next));
   } catch (err) {
@@ -65,6 +68,7 @@ export async function DELETE(req: NextRequest) {
       delete current.steamId;
     } else if (field === "psn") {
       delete current.psnNpsso;
+      delete current.psnNpssoSavedAt;
     } else if (field === "gog") {
       delete current.gogAccessToken;
       delete current.gogRefreshToken;
@@ -72,9 +76,11 @@ export async function DELETE(req: NextRequest) {
     }
 
     await writeSettings(userId, current);
-    invalidate("steam:");
-    invalidate("psn:");
-    invalidate("gog:");
+    await Promise.all([
+      invalidate("steam:"),
+      invalidate("psn:"),
+      invalidate("gog:"),
+    ]);
 
     return NextResponse.json(redactSettings(current));
   } catch (err) {

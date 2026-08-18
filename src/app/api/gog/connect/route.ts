@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
       gogRefreshToken: tokens.refresh_token,
       gogUserId: tokens.user_id,
     });
-    invalidate("gog:");
+    await invalidate("gog:");
 
     return NextResponse.json(redactSettings(next));
   } catch (err) {

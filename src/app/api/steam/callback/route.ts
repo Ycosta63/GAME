@@ -19,7 +19,7 @@ export async function GET(req: NextRequest) {
     }
 
     await mergeSettings(userId, { steamId });
-    invalidate("steam:");
+    await invalidate("steam:");
 
     settingsUrl.searchParams.set("steam_connected", "1");
     return NextResponse.redirect(settingsUrl);

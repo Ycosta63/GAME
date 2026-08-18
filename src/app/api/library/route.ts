@@ -10,8 +10,7 @@ export async function GET(req: NextRequest) {
     const userId = await currentUserId();
     const { searchParams } = new URL(req.url);
     if (searchParams.get("force") === "1") {
-      invalidate("steam:");
-      invalidate("psn:");
+      await Promise.all([invalidate("steam:"), invalidate("psn:")]);
     }
     const library = await buildLibrary(userId);
     return NextResponse.json(library);

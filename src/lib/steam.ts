@@ -19,10 +19,36 @@ interface SteamOwnedGamesResponse {
 
 export class SteamError extends Error {}
 
+/**
+ * Steam's Web API rate-limits per key (undocumented, roughly a few hundred
+ * requests per 5 minutes) and returns 429 when tripped. A single game's
+ * achievement check already does 2-3 calls, and the "100% terminés" filter
+ * fires that across a whole library, so retrying a 429 with backoff (instead
+ * of surfacing it as a hard error immediately) meaningfully improves
+ * reliability for larger libraries.
+ */
+async function fetchWithRetry(url: string, attempts = 3): Promise<Response> {
+  let res: Response;
+  for (let i = 0; i < attempts; i++) {
+    res = await fetch(url, { cache: "no-store" });
+    if (res.status !== 429) return res;
+    if (i < attempts - 1) {
+      const retryAfter = Number(res.headers.get("retry-after"));
+      const backoffMs = retryAfter > 0 ? retryAfter * 1000 : 500 * 2 ** i;
+      await new Promise((resolve) => setTimeout(resolve, backoffMs));
+    }
+  }
+  return res!;
+}
+
 async function steamFetch<T>(url: string): Promise<T> {
-  const res = await fetch(url, { cache: "no-store" });
+  const res = await fetchWithRetry(url);
   if (!res.ok) {
-    throw new SteamError(`Steam API a répondu ${res.status}`);
+    throw new SteamError(
+      res.status === 429
+        ? "Steam API : trop de requêtes, réessaie dans quelques minutes"
+        : `Steam API a répondu ${res.status}`
+    );
   }
   return res.json() as Promise<T>;
 }
@@ -98,7 +124,7 @@ async function fetchGameSchema(
     const url = `${BASE}/ISteamUserStats/GetSchemaForGame/v2/?appid=${encodeURIComponent(
       appId
     )}&key=${encodeURIComponent(apiKey)}&l=french`;
-    const res = await fetch(url, { cache: "no-store" });
+    const res = await fetchWithRetry(url);
     if (!res.ok) {
       throw new SteamError(`Steam API a répondu ${res.status}`);
     }
@@ -109,6 +135,30 @@ async function fetchGameSchema(
     };
     const list = data.game?.availableGameStats?.achievements ?? [];
     return new Map(list.map((a) => [a.name, a]));
+  });
+}
+
+/** Global unlock rate per achievement ("X% of players have this") — public
+ * data, same for every player, cached for a day like the schema. */
+async function fetchGlobalAchievementRarity(
+  appId: string
+): Promise<Map<string, number>> {
+  const cacheKey = `steam:rarity:${appId}`;
+  return cached(cacheKey, 24 * 60 * 60 * 1000, async () => {
+    const url = `${BASE}/ISteamUserStats/GetGlobalAchievementPercentagesForApp/v0002/?gameid=${encodeURIComponent(
+      appId
+    )}`;
+    const res = await fetchWithRetry(url);
+    if (!res.ok) {
+      // Non-critical — achievements still work without rarity, so don't
+      // fail the whole request over this.
+      return new Map();
+    }
+    const data = (await res.json().catch(() => null)) as {
+      achievementpercentages?: { achievements?: { name: string; percent: number }[] };
+    } | null;
+    const list = data?.achievementpercentages?.achievements ?? [];
+    return new Map(list.map((a) => [a.name, a.percent]));
   });
 }
 
@@ -134,7 +184,7 @@ export async function fetchAchievementSummary(
       steamId
     )}&l=french&format=json`;
 
-    const res = await fetch(url, { cache: "no-store" });
+    const res = await fetchWithRetry(url);
 
     if (!res.ok) {
       let reason = `HTTP ${res.status}`;
@@ -182,7 +232,10 @@ export async function fetchAchievementSummary(
       return null;
     }
 
-    const schema = await fetchGameSchema(apiKey, appId);
+    const [schema, rarity] = await Promise.all([
+      fetchGameSchema(apiKey, appId),
+      fetchGlobalAchievementRarity(appId),
+    ]);
     const list = raw
       .map((a) => {
         const meta = schema.get(a.apiname);
@@ -195,6 +248,7 @@ export async function fetchAchievementSummary(
             ? new Date(a.unlocktime * 1000).toISOString()
             : null,
           icon: (a.achieved === 1 ? meta?.icon : meta?.icongray) ?? "",
+          rarityPercent: rarity.get(a.apiname),
         };
       })
       .sort((a, b) => {
