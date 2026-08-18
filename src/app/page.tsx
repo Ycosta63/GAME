@@ -38,8 +38,21 @@ export default function DashboardPage() {
   const [platformFilter, setPlatformFilter] = useState<Platform | "all">("all");
   const [duplicatesOnly, setDuplicatesOnly] = useState(false);
   const [hideNeverPlayed, setHideNeverPlayed] = useState(false);
+  const [completedOnly, setCompletedOnly] = useState(false);
   const [sortMode, setSortMode] = useState<SortMode>("playtime");
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
+
+  // Steam appid -> completion % (or null = no achievements / private / error).
+  // PSN completion comes bundled with the library fetch (trophies.progressPercent),
+  // but Steam achievements are fetched per-game on demand, so this is only
+  // populated once the "100% terminés" filter is actually turned on.
+  const [achievementProgress, setAchievementProgress] = useState<
+    Record<string, number | null>
+  >({});
+  const [checkingAchievements, setCheckingAchievements] = useState(false);
+  const [achievementCheckError, setAchievementCheckError] = useState<
+    string | null
+  >(null);
 
   const load = useCallback((force: boolean) => {
     if (force) setRefreshing(true);
@@ -58,6 +71,56 @@ export default function DashboardPage() {
   useEffect(() => {
     load(false);
   }, [load]);
+
+  const checkSteamCompletion = useCallback(async () => {
+    if (!data) return;
+    const appIds = Array.from(
+      new Set(
+        data.entries.flatMap((e) =>
+          e.platforms
+            .filter((p) => p.platform === "steam")
+            .map((p) => p.id)
+        )
+      )
+    ).filter((id) => !(id in achievementProgress));
+    if (appIds.length === 0) return;
+
+    setCheckingAchievements(true);
+    setAchievementCheckError(null);
+    let aborted = false;
+    let cursor = 0;
+
+    async function worker() {
+      while (cursor < appIds.length && !aborted) {
+        const appId = appIds[cursor++];
+        try {
+          const res = await fetch(`/api/steam/achievements/${appId}`);
+          const json = await res.json();
+          if (!res.ok) {
+            aborted = true;
+            setAchievementCheckError(json.error ?? "Erreur inconnue");
+            return;
+          }
+          setAchievementProgress((prev) => ({
+            ...prev,
+            [appId]: json.summary ? json.summary.progressPercent : null,
+          }));
+        } catch {
+          aborted = true;
+          setAchievementCheckError("Impossible de contacter le serveur");
+        }
+      }
+    }
+
+    await Promise.all(Array.from({ length: 6 }, worker));
+    setCheckingAchievements(false);
+  }, [data, achievementProgress]);
+
+  function toggleCompletedOnly() {
+    const next = !completedOnly;
+    setCompletedOnly(next);
+    if (next) checkSteamCompletion();
+  }
 
   const filteredEntries = useMemo(() => {
     if (!data) return [];
@@ -80,6 +143,14 @@ export default function DashboardPage() {
       if (hideNeverPlayed && entry.totalPlaytimeMinutes === 0) {
         return false;
       }
+      if (completedOnly) {
+        const isComplete = entry.platforms.some((p) => {
+          if (p.platform === "psn") return p.trophies?.progressPercent === 100;
+          if (p.platform === "steam") return achievementProgress[p.id] === 100;
+          return false;
+        });
+        if (!isComplete) return false;
+      }
       return true;
     });
 
@@ -92,7 +163,16 @@ export default function DashboardPage() {
       sorted.sort((a, b) => b.totalPlaytimeMinutes - a.totalPlaytimeMinutes);
     }
     return sorted;
-  }, [data, search, platformFilter, duplicatesOnly, hideNeverPlayed, sortMode]);
+  }, [
+    data,
+    search,
+    platformFilter,
+    duplicatesOnly,
+    hideNeverPlayed,
+    completedOnly,
+    achievementProgress,
+    sortMode,
+  ]);
 
   const notConfigured =
     data && data.entries.length === 0 && data.errors.length === 0;
@@ -229,11 +309,34 @@ export default function DashboardPage() {
             >
               Jamais joués masqués
             </button>
+            <button
+              onClick={toggleCompletedOnly}
+              disabled={checkingAchievements}
+              className={`text-sm px-3 py-2 rounded-full border transition-colors disabled:opacity-50 ${
+                completedOnly
+                  ? "bg-brass/15 text-brass border-brass/40"
+                  : "bg-transparent text-shelf-muted border-shelf-border hover:text-shelf-text"
+              }`}
+            >
+              {checkingAchievements ? "Vérification…" : "100% terminés"}
+            </button>
 
             <span className="text-shelf-muted/70 text-xs ml-auto">
               {filteredEntries.length} jeu(x) affiché(s)
             </span>
           </div>
+
+          {completedOnly && achievementCheckError && (
+            <div className="text-xs text-rust flex items-center gap-2 -mt-2">
+              Vérification des succès Steam interrompue : {achievementCheckError}
+              <button
+                onClick={checkSteamCompletion}
+                className="underline hover:text-rust/80"
+              >
+                Réessayer
+              </button>
+            </div>
+          )}
 
           <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-7 lg:grid-cols-9 gap-1">
             {filteredEntries.map((entry) => (
