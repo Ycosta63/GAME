@@ -139,8 +139,11 @@ export default function SettingsPage() {
         ) : (
           <>
             <p className="text-xs text-shelf-muted">
-              Ton profil Steam doit être public (Confidentialité → Détails du
-              jeu → Public) pour que ta bibliothèque soit visible.
+              Ton profil Steam doit être public : Modifier le profil →
+              Confidentialité → mets <strong>Mon profil</strong> ET{" "}
+              <strong>Détails du jeu</strong> sur Public. « Détails du jeu »
+              seul suffit pour la bibliothèque/temps de jeu, mais les succès
+              exigent que le profil entier soit public.
             </p>
             <a
               href="/api/steam/login"

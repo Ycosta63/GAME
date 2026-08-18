@@ -51,9 +51,12 @@ comptes.
 
 Dans **Réglages**, clique sur **Se connecter avec Steam** — ça ouvre la
 page de connexion Steam officielle (OpenID), pas de clé API à saisir.
-Ton profil doit juste être **public** (Steam → Modifier le profil →
-Confidentialité → « Détails du jeu » sur Public), sinon l'API renvoie une
-bibliothèque vide même une fois connecté.
+Ton profil doit être **public** : Steam → Modifier le profil →
+Confidentialité → mets **Mon profil** ET **Détails du jeu** sur Public.
+« Détails du jeu » seul suffit pour la bibliothèque et le temps de jeu,
+mais les succès Steam exigent que le profil entier soit public — sinon
+l'API renvoie `Profile is not public` sur chaque tentative de chargement
+des succès.
 
 C'est l'app elle-même qui a besoin d'**une seule** clé API Steam
 (variable `STEAM_API_KEY`, voir la section Héberger) — les visiteurs n'ont
