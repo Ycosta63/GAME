@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { AchievementSummary, LibraryEntry } from "@/types/game";
+import type { AchievementDetails, LibraryEntry } from "@/types/game";
 import PlatformBadge from "./PlatformBadge";
 import { formatDate, formatHours } from "@/lib/format";
 import { placeholderGradient } from "@/lib/placeholder";
@@ -35,8 +35,9 @@ export default function GameDetailModal({
   onClose: () => void;
 }) {
   const [achievements, setAchievements] = useState<
-    Record<string, AchievementSummary | null | "loading" | { error: string }>
+    Record<string, AchievementDetails | null | "loading" | { error: string }>
   >({});
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -58,7 +59,10 @@ export default function GameDetailModal({
         }));
         return;
       }
-      setAchievements((prev) => ({ ...prev, [appId]: data.summary ?? null }));
+      setAchievements((prev) => ({
+        ...prev,
+        [appId]: data.summary ? data : null,
+      }));
     } catch {
       setAchievements((prev) => ({
         ...prev,
@@ -200,12 +204,63 @@ export default function GameDetailModal({
                     </button>
                   </div>
                 ) : (
-                  <span className="text-xs text-shelf-muted">
-                    🏅 {(achievements[p.id] as AchievementSummary).unlocked}/
-                    {(achievements[p.id] as AchievementSummary).total} (
-                    {(achievements[p.id] as AchievementSummary).progressPercent}
-                    %)
-                  </span>
+                  <div className="space-y-2">
+                    <button
+                      className="text-xs text-shelf-muted hover:text-brass transition-colors"
+                      onClick={() =>
+                        setExpanded((prev) => ({
+                          ...prev,
+                          [p.id]: !prev[p.id],
+                        }))
+                      }
+                    >
+                      🏅{" "}
+                      {(achievements[p.id] as AchievementDetails).summary.unlocked}/
+                      {(achievements[p.id] as AchievementDetails).summary.total} (
+                      {
+                        (achievements[p.id] as AchievementDetails).summary
+                          .progressPercent
+                      }
+                      %) — {expanded[p.id] ? "masquer" : "voir la liste"}
+                    </button>
+                    {expanded[p.id] && (
+                      <ul className="space-y-1.5 max-h-64 overflow-y-auto pr-1">
+                        {(achievements[p.id] as AchievementDetails).list.map(
+                          (a) => (
+                            <li
+                              key={a.apiName}
+                              className={`flex items-center gap-2.5 text-xs ${
+                                a.achieved
+                                  ? "text-shelf-text"
+                                  : "text-shelf-muted opacity-60"
+                              }`}
+                            >
+                              {a.icon ? (
+                                // eslint-disable-next-line @next/next/no-img-element
+                                <img
+                                  src={a.icon}
+                                  alt=""
+                                  className="w-8 h-8 rounded flex-shrink-0 bg-shelf-surface"
+                                />
+                              ) : (
+                                <div className="w-8 h-8 rounded flex-shrink-0 bg-shelf-surface" />
+                              )}
+                              <div className="min-w-0">
+                                <p className="truncate font-medium">
+                                  {a.name}
+                                </p>
+                                {a.description && (
+                                  <p className="truncate text-shelf-muted/80">
+                                    {a.description}
+                                  </p>
+                                )}
+                              </div>
+                            </li>
+                          )
+                        )}
+                      </ul>
+                    )}
+                  </div>
                 ))}
             </div>
           ))}

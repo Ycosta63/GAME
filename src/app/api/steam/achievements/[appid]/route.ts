@@ -19,12 +19,12 @@ export async function GET(
     }
 
     const steamId = await resolveSteamId(steamApiKey, settings.steamId);
-    const summary = await fetchAchievementSummary(
+    const details = await fetchAchievementSummary(
       steamApiKey,
       steamId,
       params.appid
     );
-    return NextResponse.json({ summary });
+    return NextResponse.json(details ?? { summary: null, list: [] });
   } catch (err) {
     if (err instanceof UnauthenticatedError) {
       return NextResponse.json({ error: err.message }, { status: 401 });

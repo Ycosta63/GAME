@@ -1,5 +1,5 @@
 import { cached } from "./cache";
-import type { AchievementSummary, RawGame } from "@/types/game";
+import type { AchievementDetails, RawGame } from "@/types/game";
 
 const BASE = "https://api.steampowered.com";
 
@@ -79,27 +79,60 @@ export async function fetchOwnedGames(
   });
 }
 
+interface SchemaAchievement {
+  name: string;
+  displayName: string;
+  description?: string;
+  icon: string;
+  icongray: string;
+}
+
+/** Static per-game achievement metadata (names, descriptions, icons). Same
+ * for every player, so it's cached for a full day. */
+async function fetchGameSchema(
+  apiKey: string,
+  appId: string
+): Promise<Map<string, SchemaAchievement>> {
+  const cacheKey = `steam:schema:${appId}`;
+  return cached(cacheKey, 24 * 60 * 60 * 1000, async () => {
+    const url = `${BASE}/ISteamUserStats/GetSchemaForGame/v2/?appid=${encodeURIComponent(
+      appId
+    )}&key=${encodeURIComponent(apiKey)}&l=french`;
+    const res = await fetch(url, { cache: "no-store" });
+    if (!res.ok) {
+      throw new SteamError(`Steam API a répondu ${res.status}`);
+    }
+    const data = (await res.json()) as {
+      game?: {
+        availableGameStats?: { achievements?: SchemaAchievement[] };
+      };
+    };
+    const list = data.game?.availableGameStats?.achievements ?? [];
+    return new Map(list.map((a) => [a.name, a]));
+  });
+}
+
 /**
- * Fetches unlock progress for a single game's achievements. Not all games
- * have achievements (Steam reports that as success:false, error:"Requested
- * app has no stats" — a genuine, cacheable "null"). Any other failure
- * (private profile, bad key, network hiccup, rate limit) is a real error
- * and must NOT collapse into the same "no achievements" result, or a
- * transient failure looks identical to "this game has none" and gets
- * cached as such for 30 minutes.
+ * Fetches unlock progress and full details for a single game's
+ * achievements. Not all games have achievements (Steam reports that as
+ * success:false, error:"Requested app has no stats" — a genuine, cacheable
+ * "null"). Any other failure (private profile, bad key, network hiccup,
+ * rate limit) is a real error and must NOT collapse into the same
+ * "no achievements" result, or a transient failure looks identical to
+ * "this game has none" and gets cached as such for 30 minutes.
  */
 export async function fetchAchievementSummary(
   apiKey: string,
   steamId: string,
   appId: string
-): Promise<AchievementSummary | null> {
+): Promise<AchievementDetails | null> {
   const cacheKey = `steam:ach:${steamId}:${appId}`;
   return cached(cacheKey, 30 * 60 * 1000, async () => {
     const url = `${BASE}/ISteamUserStats/GetPlayerAchievements/v0001/?appid=${encodeURIComponent(
       appId
     )}&key=${encodeURIComponent(apiKey)}&steamid=${encodeURIComponent(
       steamId
-    )}&format=json`;
+    )}&l=french&format=json`;
 
     const res = await fetch(url, { cache: "no-store" });
 
@@ -123,7 +156,13 @@ export async function fetchAchievementSummary(
       playerstats: {
         success: boolean;
         error?: string;
-        achievements?: { achieved: number }[];
+        achievements?: {
+          apiname: string;
+          achieved: number;
+          unlocktime: number;
+          name?: string;
+          description?: string;
+        }[];
       };
     };
 
@@ -138,15 +177,45 @@ export async function fetchAchievementSummary(
       );
     }
 
-    const list = data.playerstats.achievements;
-    if (!list || list.length === 0) {
+    const raw = data.playerstats.achievements;
+    if (!raw || raw.length === 0) {
       return null;
     }
-    const unlocked = list.filter((a) => a.achieved === 1).length;
+
+    const schema = await fetchGameSchema(apiKey, appId);
+    const list = raw
+      .map((a) => {
+        const meta = schema.get(a.apiname);
+        return {
+          apiName: a.apiname,
+          name: meta?.displayName ?? a.name ?? a.apiname,
+          description: meta?.description ?? a.description,
+          achieved: a.achieved === 1,
+          unlockTime: a.unlocktime
+            ? new Date(a.unlocktime * 1000).toISOString()
+            : null,
+          icon: (a.achieved === 1 ? meta?.icon : meta?.icongray) ?? "",
+        };
+      })
+      .sort((a, b) => {
+        if (a.achieved !== b.achieved) return a.achieved ? -1 : 1;
+        if (a.achieved && b.achieved) {
+          return (
+            new Date(b.unlockTime ?? 0).getTime() -
+            new Date(a.unlockTime ?? 0).getTime()
+          );
+        }
+        return a.name.localeCompare(b.name);
+      });
+
+    const unlocked = list.filter((a) => a.achieved).length;
     return {
-      total: list.length,
-      unlocked,
-      progressPercent: Math.round((unlocked / list.length) * 100),
+      summary: {
+        total: list.length,
+        unlocked,
+        progressPercent: Math.round((unlocked / list.length) * 100),
+      },
+      list,
     };
   });
 }

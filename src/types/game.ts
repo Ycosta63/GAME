@@ -27,6 +27,20 @@ export interface AchievementSummary {
   progressPercent: number;
 }
 
+export interface AchievementDetail {
+  apiName: string;
+  name: string;
+  description?: string;
+  achieved: boolean;
+  unlockTime: string | null;
+  icon: string;
+}
+
+export interface AchievementDetails {
+  summary: AchievementSummary;
+  list: AchievementDetail[];
+}
+
 export interface LibraryEntry {
   key: string;
   displayName: string;
