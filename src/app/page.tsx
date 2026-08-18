@@ -6,6 +6,7 @@ import StatsBar from "@/components/StatsBar";
 import GameCard from "@/components/GameCard";
 import GameDetailModal from "@/components/GameDetailModal";
 import FilterMenu from "@/components/FilterMenu";
+import ClassicsSection from "@/components/ClassicsSection";
 import ShelfieMark from "@/components/ShelfieMark";
 import LibrarySkeleton from "@/components/LibrarySkeleton";
 import { fuzzyMatch } from "@/lib/fuzzy";
@@ -354,6 +355,8 @@ export default function DashboardPage() {
               Aucun jeu ne correspond à ces filtres.
             </div>
           )}
+
+          <ClassicsSection entries={data.entries} />
         </>
       )}
 
