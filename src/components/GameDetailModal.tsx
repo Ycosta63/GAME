@@ -385,7 +385,7 @@ export default function GameDetailModal({
                                   </p>
                                 )}
                               </div>
-                              {a.rarityPercent !== undefined && (
+                              {typeof a.rarityPercent === "number" && (
                                 <span className="flex-shrink-0 text-shelf-muted/70 tabular-nums">
                                   {a.rarityPercent.toFixed(1)}%
                                 </span>
